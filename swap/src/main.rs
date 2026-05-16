@@ -123,8 +123,13 @@ fn main() {
     let stdout = swapon();
 
     if swap_check(&stdout) {
+        println!("Checking the swap file");
+
         if let Some(path) = swap_off(&stdout) {
+            println!("Deleting swap file");
             remove_swap_file(&path);
+
+            println!("Deleting the /etc/fstab file");
             remove_fstab(&path);
         }
     } else {
@@ -135,7 +140,10 @@ fn main() {
             remove_swap_file(swap_path);
         }
 
+        println!("Deleting the /etc/fstab file");
         remove_fstab(swap_path);
+
+        println!("Creating swap file");
         create_swap_file();
     }
 }

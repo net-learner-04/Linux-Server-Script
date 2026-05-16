@@ -48,7 +48,7 @@ fn remove_swap_file(path: &str) {
 fn create_swap_file() {
     const GB: u64 = 1024 * 1024 * 1024;
 
-    let block_size = 1024u64;
+    let block_size = 1024u64 * 1024;
 
     let mut sys = System::new_all();
     sys.refresh_all();

@@ -26,7 +26,7 @@ fn swap_off(stdout: &str) -> Option<String> {
         .map(|caps| caps["path"].to_string());
 
     if output.is_none() {
-        println!("The activated swap space cannot be found.");
+        eprintln!("The activated swap space cannot be found.");
         process::exit(1);
     }
 
@@ -39,7 +39,7 @@ fn swap_off(stdout: &str) -> Option<String> {
 }
 
 fn remove_swap_file(path: &str) {
-    println!("Deleting swap file");
+    eprintln!("Deleting swap file");
     
     match fs::remove_file(path) {
         Ok(_) => println!("The swap file ('{path}') was successfully deleted."),
@@ -48,7 +48,7 @@ fn remove_swap_file(path: &str) {
 }
 
 fn create_swap_file() {
-    println!("Creating swap file");
+    eprintln!("Creating swap file");
     
     const GB: u64 = 1024 * 1024 * 1024;
 
@@ -106,7 +106,7 @@ fn create_swap_file() {
 }
 
 fn remove_fstab(swap_path: &str) {
-    println!("Deleting the /etc/fstab file");
+    eprintln!("Deleting the /etc/fstab file");
     
     let content = fs::read_to_string("/etc/fstab").expect("Failed to read fstab");
 
@@ -129,7 +129,7 @@ fn main() {
     let stdout = swapon();
 
     if swap_check(&stdout) {
-        println!("Checking the swap file");
+        eprintln!("Checking the swap file");
 
         if let Some(path) = swap_off(&stdout) {
             remove_swap_file(&path);
@@ -140,7 +140,7 @@ fn main() {
         let swap_path = "/swapfile";
 
         if Path::new(swap_path).exists() {
-            println!("Swap file already exists, removing...");
+            eprintln!("Swap file already exists, removing...");
             remove_swap_file(swap_path);
         }
         

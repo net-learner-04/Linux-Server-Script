@@ -39,6 +39,8 @@ fn swap_off(stdout: &str) -> Option<String> {
 }
 
 fn remove_swap_file(path: &str) {
+    println!("Deleting swap file");
+    
     match fs::remove_file(path) {
         Ok(_) => println!("The swap file ('{path}') was successfully deleted."),
         Err(e) => eprintln!("Failed to delete swap file: {e}"),
@@ -46,6 +48,8 @@ fn remove_swap_file(path: &str) {
 }
 
 fn create_swap_file() {
+    println!("Creating swap file");
+    
     const GB: u64 = 1024 * 1024 * 1024;
 
     let block_size = 1024u64 * 1024;
@@ -102,6 +106,8 @@ fn create_swap_file() {
 }
 
 fn remove_fstab(swap_path: &str) {
+    println!("Deleting the /etc/fstab file");
+    
     let content = fs::read_to_string("/etc/fstab").expect("Failed to read fstab");
 
     let new_content: String = content
@@ -126,10 +132,8 @@ fn main() {
         println!("Checking the swap file");
 
         if let Some(path) = swap_off(&stdout) {
-            println!("Deleting swap file");
             remove_swap_file(&path);
-
-            println!("Deleting the /etc/fstab file");
+            
             remove_fstab(&path);
         }
     } else {
@@ -139,11 +143,9 @@ fn main() {
             println!("Swap file already exists, removing...");
             remove_swap_file(swap_path);
         }
-
-        println!("Deleting the /etc/fstab file");
+        
         remove_fstab(swap_path);
 
-        println!("Creating swap file");
         create_swap_file();
     }
 }

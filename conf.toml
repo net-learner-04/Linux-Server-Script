@@ -1,0 +1,5 @@
+[source]
+# example : target = ["/home/user/data"]
+
+[destination]
+# exapme : path = "/backup"

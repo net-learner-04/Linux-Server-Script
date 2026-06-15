@@ -145,8 +145,12 @@ def reinstaller(id_list):
 
     syslog.syslog(syslog.LOG_INFO, f"Successfully reinstalled {count} packages")
 
-root_check()
+def start():
+    root_check()
+    reinstaller(detect())
 
-reinstaller(detect())
 
-syslog.closelog()
+if __name__ == "__main__":
+    start()
+
+    syslog.closelog()

@@ -138,12 +138,14 @@ def memory_calculate():
     else:
         return 32
 
-root_check()
+def start():
+    root_check()
+    SWAP_MEMORY_VALUE = memory_calculate()
+    if check_swap_total_memory(SWAP_MEMORY_VALUE):
+        print("Starting creation due to insufficient swap space")
+        swap_create(SWAP_MEMORY_VALUE)
+    else:
+        print("The script has terminated because there is already sufficient swap space available on the system.")
 
-SWAP_MEMORY_VALUE = memory_calculate()
-
-if check_swap_total_memory(SWAP_MEMORY_VALUE):
-    print("Starting creation due to insufficient swap space")
-    swap_create(SWAP_MEMORY_VALUE)
-else:
-    print("The script has terminated because there is already sufficient swap space available on the system.")
+if __name__ == "__main__": 
+    start()

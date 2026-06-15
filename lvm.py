@@ -144,16 +144,14 @@ def mounting(lv_path, vg_name):
         with pathlib.Path("/etc/fstab").open(mode="a", encoding="utf-8") as f:
             f.write(f"\n{fstab_entry}\n")
 
-root_check()
+def start():
+    root_check()
+    AVAILABLE_DEVICE_LIST = mount_status_check(all_device_and_lvm_check())
+    pv_reset(AVAILABLE_DEVICE_LIST)
+    VG_NAME = vg_create_or_extend(AVAILABLE_DEVICE_LIST)
+    LV_PATH, CREATE = allocate_lv(VG_NAME)
+    create_file_system(LV_PATH, CREATE)
+    mounting(LV_PATH, VG_NAME)
 
-AVAILABLE_DEVICE_LIST = mount_status_check(all_device_and_lvm_check())
-
-pv_reset(AVAILABLE_DEVICE_LIST)
-
-VG_NAME = vg_create_or_extend(AVAILABLE_DEVICE_LIST)
-
-LV_PATH, CREATE = allocate_lv(VG_NAME)
-
-create_file_system(LV_PATH, CREATE)
-
-mounting(LV_PATH, VG_NAME)
+if __name__ == "__main__":
+    start()

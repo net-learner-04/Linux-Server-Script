@@ -1,50 +1,6 @@
 import subprocess as sub
 import os, syslog, time, sys
 
-# =============================================================================
-# DNF Failed Transaction Recovery Tool
-# =============================================================================
-# This tool detects incomplete or failed DNF transactions and attempts
-# to automatically recover them.
-#
-# How it works:
-#   1. Runs "dnf history list" and parses for transactions marked with "*"
-#      (incomplete/failed transactions)
-#   2. If no failed transactions are found, logs a debug message and exits
-#   3. If failed transactions exist, checks disk space (statvfs)
-#   4. If disk space is low (<2GB or <20% free), runs cleaner:
-#        - "dnf clean all" to clear cached packages/metadata
-#        - Deletes files in /tmp older than 10 days
-#        - Removes resulting empty directories under /tmp
-#   5. Attempts to redo each failed transaction via
-#      "dnf history redo <id>" (single retry, no further retries)
-#   6. Classifies failures by error type (disk space / permission-auth /
-#      other) based on returncode and stderr, and logs accordingly
-#
-# Logging:
-#   - All events are logged via syslog (facility: DAEMON, ident: dnf.py)
-#   - Includes detection results, disk usage, cleanup results, and
-#     per-transaction retry outcomes
-#
-# Benefits:
-#   - Automatically resolves common causes of failed DNF transactions
-#     (e.g., insufficient disk space)
-#   - Avoids repeated retries; failures are simply logged for review
-#   - Designed to run unattended via cron/systemd timer
-#
-# Requirements:
-#   - Must be run as root
-#   - Rocky Linux / RHEL-based systems
-#
-# Usage:
-#   sudo python3 dnf.py
-#
-# Note:
-#   To change the "old file" threshold for /tmp cleanup, modify the
-#   DAYS global variable. To change disk space thresholds, modify the
-#   conditions inside disk_check().
-# =============================================================================
-
 syslog.openlog(ident="dnf.py", logoption=syslog.LOG_PID, facility=syslog.LOG_DAEMON)
 
 DAYS = ((10 * 60) * 60) * 24 # ten days

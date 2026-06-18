@@ -6,11 +6,13 @@ syslog.openlog(ident="dnf.py", logoption=syslog.LOG_PID, facility=syslog.LOG_DAE
 DAYS = ((10 * 60) * 60) * 24 # ten days
 NOW = time.time()
 
+
 def root_check():
     '''A function to check if the program is running with root privileges'''
     if os.getuid() != 0:
         syslog.syslog(syslog.LOG_ERR, "Run as root.")
         sys.exit(os.EX_NOPERM)
+
 
 def disk_check():
     '''Function to check disk space'''
@@ -26,6 +28,7 @@ def disk_check():
     if free_gb < 2 or free_percent < 20:
         return True
     return False
+
 
 def detect():
     '''A function that checks for any pending or failed transactions
@@ -56,6 +59,7 @@ def detect():
 
     return result
 
+
 def cleaner():
     '''A function to clear DNF cache and free up space by deleting files
       older than 10 days in the /tmp folder'''
@@ -83,6 +87,7 @@ def cleaner():
     syslog.syslog(syslog.LOG_INFO, f"Removed {count} old files from /tmp")
     disk_check()
 
+
 def reinstaller(id_list):
     '''Function to redownload transactions where errors were detected'''
     count = 0
@@ -100,6 +105,7 @@ def reinstaller(id_list):
                 syslog.syslog(syslog.LOG_ERR, f"Transaction {id} failed: {result.stderr.strip()}")
 
     syslog.syslog(syslog.LOG_INFO, f"Successfully reinstalled {count} packages")
+
 
 def start():
     root_check()

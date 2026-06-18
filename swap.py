@@ -1,15 +1,18 @@
 import subprocess as sub
 import os, pathlib, psutil, math, sys
 
+
 def root_check():
     '''A function to check if the program is running with root privileges'''
     if os.getuid() != 0:
         print("Run as root")
         sys.exit(1)
 
+
 def kb_to_gb(kb):
     '''Function to convert kilobytes to gigabytes'''
     return math.ceil(kb / (1024 ** 2))
+
 
 def swap_status():
     '''Function to check the current status of the swap file'''
@@ -18,6 +21,7 @@ def swap_status():
                         text=True).stdout
     lines = [line for line in result.splitlines() if line.strip()]
     return len(lines) > 1
+
 
 def check_swap_total_memory(swap_memory):
     '''A function that calculates the total size of each active swap file
@@ -40,6 +44,7 @@ def check_swap_total_memory(swap_memory):
         return True
     else:
         return False
+
 
 def swap_create(memory_size):
     '''A function to create a swap file, set permissions, and mount it'''
@@ -84,6 +89,7 @@ def swap_create(memory_size):
             f.write("\n/swapfile swap swap defaults 0 0\n")
     print(f"Swap file created and registered {str(fstab)} successfully.")
 
+
 def memory_calculate():
     '''A function that calculates the amount of physical memory installed on the device
       and determines the recommended swap space'''
@@ -102,6 +108,7 @@ def memory_calculate():
     else:
         return 32
 
+
 def start():
     root_check()
     SWAP_MEMORY_VALUE = memory_calculate()
@@ -110,6 +117,7 @@ def start():
         swap_create(SWAP_MEMORY_VALUE)
     else:
         print("The script has terminated because there is already sufficient swap space available on the system.")
+
 
 if __name__ == "__main__": 
     start()

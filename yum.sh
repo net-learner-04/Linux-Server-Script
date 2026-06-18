@@ -2,21 +2,28 @@
 
 # Repository folder path
 REPO_DIR="/srv/repo"
+
 # USB Mount Point (Requires changes in an auto-mount environment.)
 USB_MOUNT="/mnt/usb"
+
+# Terminating function
+terminating() {
+    sleep 1
+    echo The script is terminating.
+    sleep 3
+    exit 1
+}
 
 # Check if the `createrepo` command exists
 if ! command -v createrepo &> /dev/null 
 then
     echo The createrepo command does not exist.
-    sleep 1
-    echo The script is terminating.
-    sleep 3
-    exit 1
+    terminating
 fi
 
 # Create a repository folder
 mkdir -p "$REPO_DIR"
+
 # Use the `find` command to filter and copy the `.rpm` 
 # files in the mount path to the local repository.
 find "$USB_MOUNT" -name "*.rpm" -exec cp {} "$REPO_DIR" +
@@ -24,10 +31,13 @@ find "$USB_MOUNT" -name "*.rpm" -exec cp {} "$REPO_DIR" +
 if [ $? -ne 0 ]
 then
     echo "Failed to copy RPM files. Please check USB mount status or disk space."
-    sleep 1
-    echo "The script is terminating."
-    sleep 3
-    exit 1
+    terminating
+fi
+
+if [ -z "$(ls -A "$REPO_DIR" 2>/dev/null | grep '\.rpm$')" ]
+then
+    echo "Failed to copy RPM files. No .rpm files found or USB is not mounted."
+    terminating
 fi
 
 # Check if it has been indexed before
@@ -38,10 +48,7 @@ then
     if [ $? -ne 0 ]
     then
         echo Failed to create repository. 
-        sleep 1
-        echo The script is terminating.
-        sleep 3
-        exit 1
+        terminating
     fi
 else
     echo The repository already exists. Updating the index...
@@ -49,10 +56,7 @@ else
     if [ $? -ne 0 ]
     then
         echo Failed to update repository. 
-        sleep 1
-        echo The script is terminating.
-        sleep 3
-        exit 1
+        terminating
     fi
 fi
 

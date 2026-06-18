@@ -6,6 +6,7 @@ import datetime as dt
 import pathlib as pl
 import threading as th
 
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] (%(filename)s:%(lineno)d) - %(message)s",
@@ -16,7 +17,9 @@ logging.basicConfig(
     ]
 )
 
+
 syslog.openlog(ident="backup.py", logoption=syslog.LOG_PID, facility=syslog.LOG_DAEMON)
+
 
 def root_check():
     '''A function to check if the program is running with root privileges'''
@@ -24,6 +27,7 @@ def root_check():
         logging.critical("Root privilege required to run this script.")
         syslog.syslog(syslog.LOG_ERR, "Run as root.")
         sys.exit(os.EX_NOPERM)
+
 
 def read_toml():
     '''Reads and parses the conf.toml file to load backup targets
@@ -68,6 +72,7 @@ def read_toml():
 
     return (src_paths, dst_path, part_space)
 
+
 def get_partition_space(src_list):
     '''Recursively calculates the total size of all files 
     within the source directories, safely excluding symbolic links.'''
@@ -83,6 +88,7 @@ def get_partition_space(src_list):
                     logging.warning(f"Failed to calculate partition space for {file_path}: {e}")
                     syslog.syslog(syslog.LOG_WARNING, f"Failed to calculate partition space {file_path}: {e}")
     return partition_space
+
 
 def space_check(dst_path, part_space):
     '''Compares the total required size of the source files
@@ -102,6 +108,7 @@ def space_check(dst_path, part_space):
     logging.info(f"Space check passed. Required: {part_space}B, Available: {usage}B")
     return True
 
+
 def feed_gzip(p1, p2, pbar):
     '''Reads the output of tar (p1) in chunks,
       passes it to the standard input of gzip (p2), and updates the progress'''
@@ -115,6 +122,7 @@ def feed_gzip(p1, p2, pbar):
     finally:
         p2.stdin.close()
         p1.stdout.close()
+
 
 def backup_process(src_list, dst_path, part_space):
     '''Executes a multi-process backup pipeline by streaming tar data 
@@ -171,10 +179,12 @@ def backup_process(src_list, dst_path, part_space):
         syslog.syslog(syslog.LOG_ERR, f"Failed to run backup pipeline: {e}")
         sys.exit(os.EX_SOFTWARE)
 
+
 def start():
     root_check()
     src_paths, dst_path, part_space = read_toml()
     backup_process(src_paths, dst_path, part_space)
+
 
 if __name__ == "__main__":
     start()

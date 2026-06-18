@@ -1,42 +1,6 @@
 import subprocess as sub
 import os, pathlib, psutil, math, sys
 
-# =============================================================================
-# Swap Memory Automation Tool
-# =============================================================================
-# This tool automatically calculates the recommended swap size based on
-# physical memory and creates or replaces the swap file accordingly.
-#
-# How it works:
-#   1. Calculates total physical memory and determines recommended swap size
-#   2. Checks if a swap file already exists and measures its total size
-#   3. If swap space is insufficient, creates a new swap file
-#   4. If /swapfile already exists, disables and recreates it with correct size
-#   5. Sets permissions, formats, and activates the swap file
-#   6. Registers the swap file in /etc/fstab for persistence after reboot
-#
-# Recommended swap size table:
-#   - RAM <  4GB  →  2GB swap
-#   - RAM <  16GB →  4GB swap
-#   - RAM <  64GB →  8GB swap
-#   - RAM < 256GB → 16GB swap
-#   - RAM ≥ 256GB → 32GB swap
-#
-# Benefits:
-#   - Eliminates manual swap calculation and configuration
-#   - Automatically skips execution if sufficient swap already exists
-#   - Prevents duplicate fstab entries on repeated execution
-#   - Follows standard Linux swap size recommendations
-#
-# Requirements:
-#   - Must be run as root
-#   - Rocky Linux / RHEL-based systems
-#   - Python packages: psutil
-#
-# Usage:
-#   sudo python3 swap_auto.py
-# =============================================================================
-
 def root_check():
     '''A function to check if the program is running with root privileges'''
     if os.getuid() != 0:

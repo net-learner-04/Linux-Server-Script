@@ -1,39 +1,6 @@
 import subprocess as sub
 import os, sys, pathlib, psutil, json
 
-# =============================================================================
-# LVM Automation Tool
-# =============================================================================
-# This tool automatically detects newly added disks and configures LVM.
-#
-# How it works:
-#   1. Scans all block devices and filters out disks with no partitions,
-#      no file system, and not part of LVM
-#   2. Excludes disks currently mounted or in use by the OS
-#   3. Initializes filtered disks as PV (Physical Volume)
-#   4. Creates a new VG (Volume Group) or extends an existing one
-#   5. Creates a new LV (Logical Volume) or extends an existing one
-#   6. Formats the LV with XFS file system
-#   7. Mounts the LV and registers it in /etc/fstab for persistence
-#
-# Benefits:
-#   - Reduces manual LVM configuration steps to a single script execution
-#   - Automatically detects and skips disks already in use
-#   - Prevents duplicate fstab entries on repeated execution
-#   - Supports both new LVM setup and extension of existing configuration
-#
-# Requirements:
-#   - Must be run as root
-#   - Rocky Linux / RHEL-based systems
-#   - Python packages: psutil
-#
-# Usage:
-#   sudo python3 lvm_auto.py
-#
-# Note:
-#   To change the file system, modify the FILE_SYSTEM and COMMAND global variables.
-# =============================================================================
-
 FILE_SYSTEM = "xfs"
 COMMAND = "xfs_growfs"
 

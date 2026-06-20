@@ -30,10 +30,9 @@
 :::::::::::::::88:.__..:88888:::::::::::'
  `''.:::::::::::88888888888.88:::::::::'
        `':::_:' -- '' -'-' `':_::::'`
- 
+  </pre>
+</p>
 
 Thank you for visiting https://asciiart.website/
 This ASCII pic can be found at
 https://asciiart.website/art/2097
-  </pre>
-</p>

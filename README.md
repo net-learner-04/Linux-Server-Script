@@ -1,47 +1,55 @@
 # Linux-Server-Script
 
-<p align="center">
-  <pre>
-..::---====---::..
-           .:-====================-:.
-        .:============================:.
-      .-================================-.
-    .-====================================-.
-   :========================================:
-  -==========================================-
- -============================================-
-:==============================:===============:
-.=============================:   :==============.
-:===========================:       :============:
--=========================:           :==========-
- ========================:               :=========
--=====================:                    :======-
-:===================:                        :====:
-.=================:            :=:            :==.
- :==============:            :=====:            .
-  -===========:            :=========:
-   -========:            :=============:
-    :=====:            :=================:
-     .-=:            :=====================:
-                   :=====================:'
-                 :=====================:'
-               :====================:'
-                '::----======----::'
-  </pre>
-</p>
 
-<h1 align="center">Linux-Server-Script</h1>
+                                .:xxxxxxxx:.
+                             .xxxxxxxxxxxxxxxx.
+                            :xxxxxxxxxxxxxxxxxxx:.
+                           .xxxxxxxxxxxxxxxxxxxxxxx:
+                          :xxxxxxxxxxxxxxxxxxxxxxxxx:
+                          xxxxxxxxxxxxxxxxxxxxxxxxxxX:
+                          xxx:::xxxxxxxx::::xxxxxxxxx:
+                         .xx:   ::xxxxx:     :xxxxxxxx
+                         :xx  x.  xxxx:  xx.  xxxxxxxx
+                         :xx xxx  xxxx: xxxx  :xxxxxxx
+                         'xx 'xx  xxxx:. xx'  xxxxxxxx
+                          xx ::::::xx:::::.   xxxxxxxx
+                          xx:::::.::::.:::::::xxxxxxxx
+                          :x'::::'::::':::::':xxxxxxxxx.
+                          :xx.::::::::::::'   xxxxxxxxxx
+                          :xx: '::::::::'     :xxxxxxxxxx.
+                         .xx     '::::'        'xxxxxxxxxx.
+                       .xxxx                     'xxxxxxxxx.
+                     .xxxx                         'xxxxxxxxx.
+                   .xxxxx:                          xxxxxxxxxx.
+                  .xxxxx:'                          xxxxxxxxxxx.
+                 .xxxxxx:::.           .       ..:::_xxxxxxxxxxx:.
+                .xxxxxxx''      ':::''            ''::xxxxxxxxxxxx.
+                xxxxxx            :                  '::xxxxxxxxxxxx
+               :xxxx:'            :                    'xxxxxxxxxxxx:
+              .xxxxx              :                     ::xxxxxxxxxxxx
+              xxxx:'                                    ::xxxxxxxxxxxx
+              xxxx               .                      ::xxxxxxxxxxxx.
+          .:xxxxxx               :                      ::xxxxxxxxxxxx::
+          xxxxxxxx               :                      ::xxxxxxxxxxxxx:
+          xxxxxxxx               :                      ::xxxxxxxxxxxxx:
+          ':xxxxxx               '                      ::xxxxxxxxxxxx:'
+            .:. xx:.                                   .:xxxxxxxxxxxxx'
+          ::::::.'xx:.            :                  .:: xxxxxxxxxxx':
+  .:::::::::::::::.'xxxx.                            ::::'xxxxxxxx':::.
+  ::::::::::::::::::.'xxxxx                          :::::.'.xx.'::::::.
+  ::::::::::::::::::::.'xxxx:.                       :::::::.'':::::::::
+  ':::::::::::::::::::::.'xx:'                     .'::::::::::::::::::::..
+    :::::::::::::::::::::.'xx                    .:: :::::::::::::::::::::::
+  .:::::::::::::::::::::::. xx               .::xxxx :::::::::::::::::::::::
+  :::::::::::::::::::::::::.'xxx..        .::xxxxxxx ::::::::::::::::::::'
+  '::::::::::::::::::::::::: xxxxxxxxxxxxxxxxxxxxxxx :::::::::::::::::'
+    '::::::::::::::::::::::: xxxxxxxxxxxxxxxxxxxxxxx :::::::::::::::'
+        ':::::::::::::::::::_xxxxxx::'''::xxxxxxxxxx '::::::::::::'
+             '':.::::::::::'                        `._'::::::'' 
+------------------------------------------------
+Thank you for visiting https://asciiart.website/
+This ASCII pic can be found at
+https://asciiart.website/art/2098
 
-<p align="center">
-  <strong>Automated server management code for Rocky Linux written in Python and Shell</strong>
-</p>
-
-<p align="center">
-  <img src="[https://img.shields.io/badge/Platform-Rocky_Linux-10b981?style=flat-square&logo=rocky-linux&logoColor=white](https://img.shields.io/badge/Platform-Rocky_Linux-10b981?style=flat-square&logo=rocky-linux&logoColor=white)" alt="Rocky Linux">
-  <img src="[https://img.shields.io/badge/Language-Python-3776AB?style=flat-square&logo=python&logoColor=white](https://img.shields.io/badge/Language-Python-3776AB?style=flat-square&logo=python&logoColor=white)" alt="Python">
-  <img src="[https://img.shields.io/badge/Language-Shell_Script-4EAA25?style=flat-square&logo=gnu-bash&logoColor=white](https://img.shields.io/badge/Language-Shell_Script-4EAA25?style=flat-square&logo=gnu-bash&logoColor=white)" alt="Shell">
-</p>
-
----
 
 Automated server management code for Rocky Linux written in Python and Shell

@@ -1,6 +1,7 @@
 import subprocess as sub
 import os, syslog, time, sys
 
+
 syslog.openlog(ident="dnf.py", logoption=syslog.LOG_PID, facility=syslog.LOG_DAEMON)
 
 DAYS = ((10 * 60) * 60) * 24 # ten days
@@ -114,5 +115,6 @@ def start():
 
 if __name__ == "__main__":
     start()
-
+    syslog.syslog(syslog.LOG_INFO, "Script completed successfully.")
+    print("Script completed successfully.")
     syslog.closelog()

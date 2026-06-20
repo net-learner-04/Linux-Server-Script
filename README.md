@@ -1,55 +1,36 @@
 # Linux-Server-Script
 
+## Automated server management code for Rocky Linux written in Python and Shell
 
-                                .:xxxxxxxx:.
-                             .xxxxxxxxxxxxxxxx.
-                            :xxxxxxxxxxxxxxxxxxx:.
-                           .xxxxxxxxxxxxxxxxxxxxxxx:
-                          :xxxxxxxxxxxxxxxxxxxxxxxxx:
-                          xxxxxxxxxxxxxxxxxxxxxxxxxxX:
-                          xxx:::xxxxxxxx::::xxxxxxxxx:
-                         .xx:   ::xxxxx:     :xxxxxxxx
-                         :xx  x.  xxxx:  xx.  xxxxxxxx
-                         :xx xxx  xxxx: xxxx  :xxxxxxx
-                         'xx 'xx  xxxx:. xx'  xxxxxxxx
-                          xx ::::::xx:::::.   xxxxxxxx
-                          xx:::::.::::.:::::::xxxxxxxx
-                          :x'::::'::::':::::':xxxxxxxxx.
-                          :xx.::::::::::::'   xxxxxxxxxx
-                          :xx: '::::::::'     :xxxxxxxxxx.
-                         .xx     '::::'        'xxxxxxxxxx.
-                       .xxxx                     'xxxxxxxxx.
-                     .xxxx                         'xxxxxxxxx.
-                   .xxxxx:                          xxxxxxxxxx.
-                  .xxxxx:'                          xxxxxxxxxxx.
-                 .xxxxxx:::.           .       ..:::_xxxxxxxxxxx:.
-                .xxxxxxx''      ':::''            ''::xxxxxxxxxxxx.
-                xxxxxx            :                  '::xxxxxxxxxxxx
-               :xxxx:'            :                    'xxxxxxxxxxxx:
-              .xxxxx              :                     ::xxxxxxxxxxxx
-              xxxx:'                                    ::xxxxxxxxxxxx
-              xxxx               .                      ::xxxxxxxxxxxx.
-          .:xxxxxx               :                      ::xxxxxxxxxxxx::
-          xxxxxxxx               :                      ::xxxxxxxxxxxxx:
-          xxxxxxxx               :                      ::xxxxxxxxxxxxx:
-          ':xxxxxx               '                      ::xxxxxxxxxxxx:'
-            .:. xx:.                                   .:xxxxxxxxxxxxx'
-          ::::::.'xx:.            :                  .:: xxxxxxxxxxx':
-  .:::::::::::::::.'xxxx.                            ::::'xxxxxxxx':::.
-  ::::::::::::::::::.'xxxxx                          :::::.'.xx.'::::::.
-  ::::::::::::::::::::.'xxxx:.                       :::::::.'':::::::::
-  ':::::::::::::::::::::.'xx:'                     .'::::::::::::::::::::..
-    :::::::::::::::::::::.'xx                    .:: :::::::::::::::::::::::
-  .:::::::::::::::::::::::. xx               .::xxxx :::::::::::::::::::::::
-  :::::::::::::::::::::::::.'xxx..        .::xxxxxxx ::::::::::::::::::::'
-  '::::::::::::::::::::::::: xxxxxxxxxxxxxxxxxxxxxxx :::::::::::::::::'
-    '::::::::::::::::::::::: xxxxxxxxxxxxxxxxxxxxxxx :::::::::::::::'
-        ':::::::::::::::::::_xxxxxx::'''::xxxxxxxxxx '::::::::::::'
-             '':.::::::::::'                        `._'::::::'' 
+
+
+                .88888888:.
+               88888888.88888.
+             .8888888888888888.
+             888888888888888888
+             88' _`88'_  `88888
+             88 88 88 88  88888
+             88_88_::_88_:88888
+             88:::,::,:::::8888
+             88`:::::::::'`8888
+            .88  `::::'    8:88.
+           8888            `8:888.
+         .8888'             `888888.
+        .8888:..  .::.  ...:'8888888:.
+       .8888.'     :'     `'::`88:88888
+      .8888        '         `.888:8888.
+     888:8         .           888:88888
+   .888:88        .:           888:88888:
+   8888888.       ::           88:888888
+   `.::.888.      ::          .88888888
+  .::::::.888.    ::         :::`8888'.:.
+ ::::::::::.888   '         .::::::::::::
+ ::::::::::::.8    '      .:8::::::::::::.
+.::::::::::::::.        .:888:::::::::::::
+:::::::::::::::88:.__..:88888:::::::::::'
+ `'.:::::::::::88888888888.88:::::::::'
+       `':::_:' -- '' -'-' `':_::::'` 
 ------------------------------------------------
 Thank you for visiting https://asciiart.website/
 This ASCII pic can be found at
-https://asciiart.website/art/2098
-
-
-Automated server management code for Rocky Linux written in Python and Shell
+https://asciiart.website/art/2097

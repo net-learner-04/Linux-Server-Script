@@ -188,6 +188,7 @@ def start():
 
 if __name__ == "__main__":
     start()
-    syslog.closelog()
     logging.info("Backup script finished safely.")
+    print("Script completed successfully.")
+    syslog.closelog()
 

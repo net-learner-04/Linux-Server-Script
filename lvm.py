@@ -1,6 +1,7 @@
 import subprocess as sub
 import os, sys, pathlib, psutil, json
 
+
 FILE_SYSTEM = "xfs"
 COMMAND = "xfs_growfs"
 
@@ -132,3 +133,4 @@ def start():
 
 if __name__ == "__main__":
     start()
+    print("Script completed successfully.")

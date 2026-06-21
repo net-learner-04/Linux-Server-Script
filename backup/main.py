@@ -18,7 +18,7 @@ logging.basicConfig(
 )
 
 
-syslog.openlog(ident="backup.py", logoption=syslog.LOG_PID, facility=syslog.LOG_DAEMON)
+syslog.openlog(ident="backup", logoption=syslog.LOG_PID, facility=syslog.LOG_DAEMON)
 
 
 def root_check():

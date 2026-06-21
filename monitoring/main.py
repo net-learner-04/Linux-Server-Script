@@ -1,12 +1,12 @@
 import subprocess as sub
 import logging as log
 import datetime as dt
+import threading as thr
 import psutil, requests, os, dotenv, sys, time
+from logging.handlers import TimedRotatingFileHandler
 
 
 dotenv.load_dotenv()
-
-NOWDATE = dt.datetime.now().strftime("%Y-%m-%d")
 
 # List of Thresholds 
 THRESHOLDS = {
@@ -19,18 +19,37 @@ THRESHOLDS = {
     "hdd_write": 40.0,
     "ssd_read": 200.0,
     "ssd_write": 150.0,
+    "zombie": 10,
+    "file_descriptor": 80.0,
+    "swap": 50.0
 }
 
 # Adjust according to your server environment.
 SERVICES = ["nginx", "sshd", "httpd"]
 
 # minutes
-COOLDOWN = 15
+COOLDOWN = 15 
 
 ALERTFILE = ".last_alert"
 
+BOOTFILE = ".last_boot"
+
+
+def mkdir_log():
+    '''A function that creates a log directory.'''
+    os.makedirs(os.path.join(os.path.dirname(__file__), "log"), exist_ok=True)
+
+
+mkdir_log()
+
+handler = TimedRotatingFileHandler(
+    filename=os.path.join(os.path.dirname(__file__), "log", "server.log"),
+    when="midnight",
+    backupCount=7
+)
+
 log.basicConfig(
-    filename=os.path.join(os.path.dirname(__file__), "log", f"{NOWDATE}_server.log"),
+    handlers=[handler],
     level=log.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s"
 )
@@ -44,21 +63,34 @@ def root_check():
         sys.exit(os.EX_NOPERM)
 
 
-def mkdir_log():
-    '''A function that creates a log directory.'''
-    os.makedirs(os.path.join(os.path.dirname(__file__), "log"), exist_ok=True)
-
-
-def sever_status_check():
+def server_status_check():
     '''Use `psutil` to check CPU, memory, and disk usage 
     and determine whether they exceed a threshold (e.g., 85%)'''
     warn_list = []
+    result = {}
+
+    def wrapper_network():
+        result["network"] = network_traffic_check()
+    def wrapper_disk():
+        result["disk"] = disk_io_check()
+
+    t1 = thr.Thread(target=wrapper_network)
+    t2 = thr.Thread(target=wrapper_disk)
+
+    t1.start()
+    t2.start()
+
+    t1.join()
+    t2.join()
 
     cpu_usage = psutil.cpu_percent(interval=3)
     memory_usage = psutil.virtual_memory().percent
     disk_usage = psutil.disk_usage('/').percent
-    tx_mbytes, rx_mbytes = network_traffic_check()
-    hdd_read, hdd_write, ssd_read, ssd_write = disk_io_check()
+    tx_mbytes, rx_mbytes = result["network"]
+    hdd_read, hdd_write, ssd_read, ssd_write = result["disk"]
+    zombie_count = count_zombie_process()
+    fd_usage = file_descriptor_check()
+    swap_usage = psutil.swap_memory().percent
 
     if cpu_usage > THRESHOLDS["cpu"]:
         warn_list.append(f"CPU_USAGE: {cpu_usage}")
@@ -78,6 +110,12 @@ def sever_status_check():
         warn_list.append(f"SSD_READ: {ssd_read}")
     if ssd_write > THRESHOLDS["ssd_write"]:
         warn_list.append(f"SSD_WRITE: {ssd_write}")
+    if zombie_count > THRESHOLDS["zombie"]:
+        warn_list.append(f"ZOMBIE_PROCESS: {zombie_count}")
+    if fd_usage > THRESHOLDS["file_descriptor"]:
+        warn_list.append(f"FILE_DESCRIPTOR: {fd_usage}")
+    if swap_usage > THRESHOLDS["swap"]:
+        warn_list.append(f"SWAP: {swap_usage}")
 
     return warn_list
 
@@ -92,10 +130,10 @@ def service_status_check():
             log.warning(f"The {service} is currently disabled. Attempting to restart...")
             if sub.run(["systemctl", "restart", service], stdout=sub.DEVNULL, stderr=sub.DEVNULL).returncode == 0:
                 log.info(f"The {service} restart success.")
-                warn_list.append(f"Detected that the {service} service is down -> Automatic restart successful.")
+                warn_list.append(f"SERVICE: {service} -> Automatic restart successful.")
             else:
                 log.error(f"The {service} restart failed.")
-                warn_list.append(f"Detected that the {service} service is down -> Automatic restart failed.")
+                warn_list.append(f"SERVICE: {service} -> Automatic restart failed.")
 
     return warn_list
 
@@ -114,6 +152,26 @@ def return_disks():
             disks.add(device)
 
     return disks
+
+
+def boot_time_check():
+    '''A function that detects whether the current boot time has changed
+    from the reboot time stored in a file.'''
+    boot_time = dt.datetime.fromtimestamp(psutil.boot_time())
+
+    if not os.path.exists(BOOTFILE):
+        return True
+    
+    with open(BOOTFILE, mode="r") as file:
+        last_boot = dt.datetime.fromisoformat(file.read().strip())
+        
+    return last_boot != boot_time
+
+
+def update_boot_time():
+    '''A function that saves the current boot time to the '.last_boot' file.'''
+    with open(BOOTFILE, mode="w") as file:
+        file.write(f"{dt.datetime.fromtimestamp(psutil.boot_time()).isoformat()}\n")
 
 
 def disk_io_check():
@@ -153,6 +211,32 @@ def disk_io_check():
     return hdd_read, hdd_write, ssd_read, ssd_write
 
 
+def file_descriptor_check():
+    '''A function that returns the system-wide file descriptor usage rate as a percentage.'''
+    path = "/proc/sys/fs/file-nr"
+    with open(path, mode="r") as file:
+        contents = file.read().split()
+        usage = 0.0
+        try:
+            usage = int(contents[0]) / int(contents[2]) * 100
+        except ZeroDivisionError as e:
+            log.error(f"Error Calculating File Descriptor Usage: {e}")
+    return usage 
+
+
+def count_zombie_process():
+    '''A function that returns the number of zombie processes on the server.'''
+    count = 0
+    for process in psutil.process_iter():
+        try:
+            if process.status() == "zombie":
+                count += 1
+        except psutil.NoSuchProcess:
+            pass
+    
+    return count
+
+
 def network_traffic_check():
     '''A function that compares the transmitted and received bytes, 
     converts the result to MB/s, and returns it.'''
@@ -173,8 +257,9 @@ def last_alert_check():
     if not os.path.exists(ALERTFILE):
         return True
     
-    with open(ALERTFILE) as file:
+    with open(ALERTFILE, mode="r") as file:
         last = dt.datetime.fromisoformat(file.read().strip())
+
     return (dt.datetime.now() - last).total_seconds() / 60 >= COOLDOWN
 
 
@@ -189,7 +274,7 @@ def discord_format(warn_list):
     fields = [{"name": item.split(":")[0], "value": f"`{item}`", "inline": False} for item in warn_list]
     
     embed = {
-        "title": "SERVER MONITORING REPORT",
+        "title": "SERVER MONITORING SYSTEM",
         "description": f"Detected **{len(warn_list)}** issue(s) requiring attention.",
         "color": 0xC0392B,
         "fields": fields,
@@ -221,10 +306,15 @@ def send_message(message):
 
 def start():
     root_check()
-    mkdir_log()
-    system_warn_list = sever_status_check()
+    system_warn_list = server_status_check()
     service_warn_list = service_status_check()
     errors = system_warn_list + service_warn_list
+
+    if boot_time_check():
+        if os.path.exists(BOOTFILE):
+            errors.append("SERVER: Reboot detected.")
+        update_boot_time()
+
     if len(errors) > 0:
         if last_alert_check():
             format_message = discord_format(errors)

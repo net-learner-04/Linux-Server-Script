@@ -1,11 +1,13 @@
 import subprocess as sub
 import json, psutil, os, pathlib, syslog, sys
 
+
 def root_check():
     '''A function to check if the program is running with root privileges'''
     if os.getuid() != 0:
         syslog.syslog(syslog.LOG_ERR, "Run as root.")
         sys.exit(os.EX_NOPERM)
+
 
 def check_device():
     '''A function that selects a RAID target by checking the list of device blocks

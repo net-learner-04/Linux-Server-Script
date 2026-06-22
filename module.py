@@ -3,9 +3,8 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 
-# To keep the code running in the background 
-# and monitoring the directory, execute the code using the command below.
-# nohup python3 <file name>.py &
+# To keep the code running in the background and monitoring the directory, 
+# execute the code using the command. -> nohup python(3) <file name>.py &
 
 
 DIRECTORY_PATH = pathlib.Path(__file__).parent

@@ -21,7 +21,8 @@ THRESHOLDS = {
     "ssd_write": 150.0,
     "zombie": 10,
     "file_descriptor": 80.0,
-    "swap": 50.0
+    "swap": 50.0,
+    "temp": 80.0,
 }
 
 # Adjust according to your server environment.
@@ -91,6 +92,7 @@ def server_status_check():
     zombie_count = count_zombie_process()
     fd_usage = file_descriptor_check()
     swap_usage = psutil.swap_memory().percent
+    temps = temperatures_check()
 
     if cpu_usage > THRESHOLDS["cpu"]:
         warn_list.append(f"CPU_USAGE: {cpu_usage}")
@@ -116,7 +118,11 @@ def server_status_check():
         warn_list.append(f"FILE_DESCRIPTOR: {fd_usage}")
     if swap_usage > THRESHOLDS["swap"]:
         warn_list.append(f"SWAP: {swap_usage}")
-
+    if temps is not None:
+        max_sensor_name, max_temp = temps
+        if max_temp > THRESHOLDS["temp"]:
+            warn_list.append(f"TEMPERATURE ({max_sensor_name}): {max_temp}")
+    
     return warn_list
 
 
@@ -235,6 +241,28 @@ def count_zombie_process():
             pass
     
     return count
+
+
+def temperatures_check():
+    '''A function that checks the temperatures of the sensors and returns the highest temperature.'''
+    if not hasattr(psutil, "sensors_temperatures"):
+        log.warning("Temperature sensors are not supported on this system.")
+        return None
+
+    temps = psutil.sensors_temperatures()
+
+    if not temps:
+        log.warning("No temperature sensors found.")
+        return None
+
+    max_sensor_name, max_temp = max(
+        ((name, entry.current)
+        for name, entries in temps.items()
+        for entry in entries),
+        key=lambda x: x[1]
+    )
+
+    return max_sensor_name, max_temp
 
 
 def network_traffic_check():

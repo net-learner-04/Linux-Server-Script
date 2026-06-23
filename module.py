@@ -1,6 +1,7 @@
-import os, sys, ast, time, pathlib
+import os, sys, ast, time, pathlib, subprocess as sub, logging as log
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from logging.handlers import TimedRotatingFileHandler
 
 
 # To keep the code running in the background and monitoring the directory, 
@@ -10,6 +11,23 @@ from watchdog.events import FileSystemEventHandler
 DIRECTORY_PATH = pathlib.Path(__file__).parent
 
 MODULES_FILE = DIRECTORY_PATH / "modules.txt"
+
+def mkdir_log():
+    os.makedirs(os.path.join(os.path.dirname(__file__), "log"), exist_ok=True)
+
+mkdir_log()
+
+handler = TimedRotatingFileHandler(
+    filename=os.path.join(os.path.dirname(__file__), "log", "watchdog.log"),
+    when="midnight",
+    backupCount=7
+)
+
+log.basicConfig(
+    handlers=[handler],
+    level=log.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
 
 
 class Target:
@@ -54,7 +72,7 @@ class Handler(FileSystemEventHandler):
 def root_check():
     '''A function to check if the program is running with root privileges'''
     if os.getuid() != 0:
-        print("Run as root.")
+        log.critical("Root privilege required.")
         sys.exit(os.EX_NOPERM)
 
 
@@ -71,11 +89,13 @@ def parse_import(file_path):
         for module in imports:
             if isinstance(module, ast.Import):
                 for alias in module.names:
-                    return_module.add(alias.name)
+                    if alias.name not in sys.stdlib_module_names:
+                        return_module.add(alias.name)
             elif isinstance(module, ast.ImportFrom):
-                return_module.add(module.module)
+                if module.module is not None and module.module not in sys.stdlib_module_names:
+                    return_module.add(module.module)
     except SyntaxError:
-        print(f"Skipping {file_path} due to syntax error.")
+        log.warning(f"Skipping {file_path} due to syntax error.")
 
     return return_module
 
@@ -94,11 +114,40 @@ def scan_directory(dir_path):
     return result
 
 
+def pip_install(modules):
+    '''A function that installs the modules specified in the list passed as parameters.'''
+    for module in modules:
+        try:
+            sub.run(["pip3", "install", module, "--quiet"], check=True)
+            log.info(f"{module} installed successfully.")
+        except sub.CalledProcessError as e:
+            log.error(f"{module} install failed with return code: {e.returncode}")
+        except (FileNotFoundError, OSError) as e:
+            log.error(f"The network connection is down, or pip is not installed: {e}")
+        
+
 def update_txt(modules, output_path):
     '''A function that takes a 'set' of module names, sorts them, and overwrites 'modules.txt'.'''
-    with open(output_path, "w") as file:
-        for module in sorted(modules):
-            file.write(f"{module}\n")
+    old_modules = set()
+    new_modules = set(modules)
+    final_modules = set()
+
+    try:
+        with open(output_path, "r", encoding="utf-8") as file:
+            for module in file.readlines():
+                old_modules.add(module.strip())
+            final_modules = new_modules - old_modules
+        
+        with open(output_path, "w", encoding="utf-8") as file:
+            for module in sorted(modules):
+                file.write(f"{module}\n")
+        
+        pip_install(final_modules)
+    except FileNotFoundError:
+        with open(output_path, "w", encoding="utf-8") as file:
+            for module in sorted(modules):
+                file.write(f"{module}\n")
+        pip_install(new_modules)
 
 
 def start():

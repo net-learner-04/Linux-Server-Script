@@ -27,6 +27,7 @@ then
     exit 1
 fi
 
+# google.com IP address
 TARGET="8.8.8.8"
 
 if ping -c 1 -w 1 "$TARGET" &> /dev/null

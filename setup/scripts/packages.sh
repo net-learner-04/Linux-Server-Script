@@ -6,6 +6,7 @@ echo "Enable the EPEL repository."
 dnf install epel-release -y
 dnf update -y
 
+# List of Required Packages
 PACKAGES_LIST=(
     "btop"
     "tmux"

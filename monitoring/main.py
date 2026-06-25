@@ -2,7 +2,7 @@ import subprocess as sub
 import logging as log
 import datetime as dt
 import threading as thr
-import psutil, requests, os, dotenv, sys, time
+import psutil, requests, os, dotenv, sys, time, re
 from logging.handlers import TimedRotatingFileHandler
 
 
@@ -31,9 +31,11 @@ SERVICES = ["nginx", "sshd", "httpd"]
 # minutes
 COOLDOWN = 15 
 
-ALERTFILE = ".last_alert"
+_BASE = os.path.dirname(os.path.abspath(__file__))
 
-BOOTFILE = ".last_boot"
+ALERTFILE = os.path.join(_BASE, ".last_alert")
+
+BOOTFILE  = os.path.join(_BASE, ".last_boot")
 
 
 def mkdir_log():
@@ -71,9 +73,19 @@ def server_status_check():
     result = {}
 
     def wrapper_network():
-        result["network"] = network_traffic_check()
+        try:
+            result["network"] = network_traffic_check()
+        except Exception as e:
+            log.error(f"Network check failed: {e}")
+            result["network"] = (0.0, 0.0)
+
+    
     def wrapper_disk():
-        result["disk"] = disk_io_check()
+        try:
+            result["disk"] = disk_io_check()
+        except Exception as e:
+            log.error(f"Disk IO check failed: {e}")
+            result["disk"] = (0.0, 0.0, 0.0, 0.0)
 
     t1 = thr.Thread(target=wrapper_network)
     t2 = thr.Thread(target=wrapper_disk)
@@ -95,7 +107,7 @@ def server_status_check():
     temps = temperatures_check()
 
     if cpu_usage > THRESHOLDS["cpu"]:
-        warn_list.append(f"CPU_USAGE: {cpu_usage}")
+        warn_list.append(f"CPU_USAGE: {cpu_usage:.1f}")
     if memory_usage > THRESHOLDS["memory"]:
         warn_list.append(f"MEMORY_USAGE: {memory_usage}")
     if disk_usage > THRESHOLDS["disk"]:
@@ -145,18 +157,14 @@ def service_status_check():
 
 
 def return_disks():
-    '''A function that returns only the disk names from the disk list.'''
-    # Data Structures Without Duplicates
     disks = set()
-
+    
     for disk in psutil.disk_partitions():
-        device = os.path.basename(disk.device).rstrip("0123456789")
-        if "nvme" in device:
-            nvme = device.rstrip("p")
-            disks.add(nvme)
-        else:
-            disks.add(device)
-
+        device = os.path.basename(disk.device)
+        match = re.match(r"(nvme\d+n\d+|[a-z]+)", device)
+        if match:
+            disks.add(match.group(1))
+            
     return disks
 
 
@@ -299,7 +307,7 @@ def update_last_alert():
 
 def discord_format(warn_list):
     '''A function that defines the Discord transmission format.'''
-    fields = [{"name": item.split(":")[0], "value": f"`{item}`", "inline": False} for item in warn_list]
+    fields = [{"name": item.split(":", 1)[0], "value": f"`{item}`", "inline": False} for item in warn_list]
     
     embed = {
         "title": "SERVER MONITORING SYSTEM",

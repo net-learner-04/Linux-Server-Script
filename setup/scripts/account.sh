@@ -63,7 +63,7 @@ echo "Registering a Public Key on a Client PC (Not the Server)."
 echo "=========================================================="
 echo "1. Open a new terminal on your CLIENT PC (Windows/Mac/Linux)."
 echo "2. Run the following command to copy your public key to the server:"
-echo "   ssh-copy-id -p $NUMBER $username@[SERVER_IP]"
+echo "   ssh-copy-id -p $NUMBER [USER_NAME]@[SERVER_IP]"
 echo "3. Enter the user's password when prompted."
 echo "4. Verify you can log in without a password: ssh -p [NEW_PORT] [USERNAME]@[SERVER_IP]"
 echo "=========================================================="
@@ -91,3 +91,6 @@ EOF
         systemctl restart sshd
     fi
 fi
+
+SCRIPT_DIR=$(dirname "$(realpath "$0")")
+python3 "$SCRIPT_DIR/../verify.py" "$NUMBER" "$username"

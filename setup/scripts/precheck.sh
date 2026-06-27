@@ -19,7 +19,7 @@ then
 fi
 
 OS_ID=$(awk -F'=' '$1=="ID" {print $2}' /etc/os-release | tr -d '"')
-OS_VER=$(awk -F'=' '$1=="VERSION_ID" {print $2}' /etc/os-release | tr -d '"')
+# OS_VER=$(awk -F'=' '$1=="VERSION_ID" {print $2}' /etc/os-release | tr -d '"')
 
 if [ "$OS_ID" != "rocky" ]
 then
@@ -27,7 +27,6 @@ then
     exit 1
 fi
 
-# google.com IP address
 TARGET="8.8.8.8"
 
 if ping -c 1 -w 1 "$TARGET" &> /dev/null

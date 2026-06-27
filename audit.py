@@ -1,17 +1,25 @@
-import os, time, re, urllib.request, json, sys
+import os, time, re, urllib.request, json, sys, time
 from datetime import datetime
 import subprocess as sub
 
-WEBHOOK =
 
-FILE_KEY = 
+# Discord web hook.
+WEBHOOK = 
 
-EXEC_KEY = 
+FILE_KEY = "my_secret_key"
+EXEC_KEY = "my_exec_key"
 
 AUDIT_LOG_PATH = "/var/log/audit/audit.log"
 
+MESSAGE_QUEUE = []
+LAST_SENT = 0
+# sec
+INTERVAL = 10
+
 
 def setup_audit_rules():
+    '''Set up audit rules to monitor sensitive file access and process execution using auditctl. 
+    Requires root privileges.'''
     # Delete All Existing Audit Rules.
     sub.run(["auditctl", "-D"], stdout=sub.DEVNULL, stderr=sub.DEVNULL)
 
@@ -26,12 +34,14 @@ def setup_audit_rules():
 
 
 def cleanup_audit_rules():
+    '''Remove all audit rules and reset audit configuration on script exit.'''
     print("Delete All Existing Audit Rules.")
     sub.run(["auditctl", "-D"], stdout=sub.DEVNULL, stderr=sub.DEVNULL)
     print("Rule removal complete. Script terminated.")
 
 
 def verifying_inode_changes(last_inode):
+    '''Check if the audit log file has been rotated or replaced by comparing inode values.'''
     try:
         current_inode = os.stat(AUDIT_LOG_PATH).st_ino
         return last_inode != current_inode
@@ -40,6 +50,7 @@ def verifying_inode_changes(last_inode):
 
 
 def file_tailing():
+    '''Continuously read new lines from the audit log file and handle log rotation.'''
     current_inode = None
     file = None
 
@@ -68,14 +79,130 @@ def file_tailing():
             file.close()    
 
 
+def parse_audit_log(line):
+    '''Parse a raw audit log line into a dictionary of key-value pairs.'''
+    p = r'([a-zA-Z0-9_]+)=(?:"([^"]*)"|([^"\s]+))'
+    m = re.findall(p, line)
+
+    data = dict()
+    
+    for item in m:
+        key = item[0]
+        value = item[1] if item[1] else item[2]
+        data[key] = value
+    
+    return data
+
+
+def flush(force=False):
+    '''Send queued messages to Discord while respecting rate limiting.'''
+    global LAST_SENT
+
+    if not MESSAGE_QUEUE:
+        return
+
+    now = time.time()
+
+    if not force and now - LAST_SENT < INTERVAL:
+        return
+
+    msg = "\n".join(MESSAGE_QUEUE)
+    MESSAGE_QUEUE.clear()
+
+    send_discord_server(msg)
+    LAST_SENT = now
+
+
+def send_discord_server(message):
+    '''Send a message to a Discord webhook for alerting or reporting events.'''
+    json_data = {
+        "content": message
+    }
+
+    try:
+        data = json.dumps(json_data).encode("utf-8")
+
+        req = urllib.request.Request(
+            WEBHOOK,
+            data = data,
+            headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"}
+        )
+
+        with urllib.request.urlopen(req) as response:
+            if response.status == 204:
+                return True
+            else:
+                print(f"Discord transmission response status error: {response.status}")
+    except Exception as e:
+        print(f"Failed to send Discord notification: {e}")
+    return False
+
+
 def start():
+    '''Main loop that monitors audit logs, processes events, and sends alerts/reports.'''
+    buffer = dict()
+    reports = []
     setup_audit_rules()
+
+    start_time = datetime.now()
 
     try:
         print(f"Monitoring the {AUDIT_LOG_PATH} file...")
 
         for line in file_tailing():
-            pass
+            parsed_data = parse_audit_log(line)
+
+            if "type" not in parsed_data:
+                continue
+            
+            log_type = parsed_data.get("type")
+            log_key = parsed_data.get("key")
+            msg_id = parsed_data.get("msg_id")
+
+            if log_type == "SYSCALL":
+                if parsed_data.get("key") == FILE_KEY:
+                    exe_path = parsed_data.get("exe", "Unknown")
+                    uid_val = parsed_data.get("uid", "Unknown")
+
+                    alert_msg = (
+                        f"[!] ALERT Sensitive file access detected\n"
+                        f"    Target: /etc/passwd\n"
+                        f"    Program: {exe_path}\n"
+                        f"    UID: {uid_val}\n"
+                        f"    Event ID: {msg_id}"
+                    )
+
+                    send_discord_server(alert_msg)
+
+                elif log_key == EXEC_KEY:
+                    buffer[msg_id] = {
+                        "exe": parsed_data.get("exe", "Unknown"),
+                        "uid": parsed_data.get("uid", "Unknown"),
+                        # A list to store the commands used when the type is EXECVE.
+                        "args": []
+                    }
+            elif log_type == "EXECVE":
+                if msg_id in buffer:
+                    for key in sorted(parsed_data.keys()):
+                        if key.startswith("a") and key[1:].isdigit():
+                            buffer[msg_id]["args"].append(parsed_data[key])
+
+                    if len(buffer) > 10000:
+                        buffer.clear()
+
+                    reports.append(" ".join(buffer[msg_id]["args"]))
+                    buffer.pop(msg_id)
+            current_time = datetime.now()
+            elapsed = (current_time - start_time).total_seconds()
+
+            if elapsed >= 3600:
+                if reports:
+                    report_msg = f"EXEC Report\n" + "\n".join(reports)
+                    MESSAGE_QUEUE.append(report_msg)
+                    flush()
+                
+                reports = []
+                start_time = current_time
     except KeyboardInterrupt as e:
         print(f"The script is terminated by the user: {e}")
     finally:

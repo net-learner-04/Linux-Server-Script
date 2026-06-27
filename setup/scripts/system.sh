@@ -14,7 +14,6 @@ fi
 echo "set the timezone."
 timedatectl set-timezone Asia/Seoul
 
-# Linux Keyboard Configuration Functions
 echo "set the locale."
 localectl set-locale LANG=en_US.UTF-8
 

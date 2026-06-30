@@ -7,23 +7,28 @@ dnf install epel-release -y
 dnf update -y
 
 PACKAGES_LIST=(
-    "btop"
-    "tmux"
-    "vim"
-    "git"
-    "bash-completion"
-    "policycoreutils-python-utils"
-    "tree"
-    "tcpdump"
-    "bind-utils"
-    "curl"
-    "wget"
-    "tar"
-    "unzip"
+    # [Core Tools & Utilities]
+    "btop" "mdadm" "tmux" "vim" "git" "tree" "bash-completion"
+    "curl" "wget" "tar" "unzip" "policycoreutils-python-utils"
+
+    # [Security & Access Control]
     "fail2ban"
-    "net-tools"
-    "nmap"
-    "traceroute"
+
+    # [Networking & Troubleshooting]
+    "net-tools" "nmap" "tcpdump" "traceroute" "bind-utils"
+    "wireshark-cli"       # tshark: Advanced packet and protocol parsing via CLI
+    "iperf3"              # Network bandwidth and segment performance measurement
+    "socat"               # Multipurpose relay tool for bidirectional data streams
+
+    # [System Performance & Diagnosis]
+    "sysstat"             # iostat, sar: Disk and system performance statistics
+    "iotop"               # Monitor and display real-time disk I/O usage by processes
+    "lsof"                # List open files and associated network sockets
+    "strace"              # Trace system calls (POSIX APIs) and signals of a process
+
+    # [Data Backup & Hardware Detection]
+    "rsync"               # Fast and incremental file transfer/backup utility
+    "pciutils"            # lspci: Verify hardware devices recognized by the kernel
 )
 
 ERROR_PACKAGES_LIST=()
@@ -31,7 +36,7 @@ SECOND_ERROR_PACKAGES_LIST=()
 
 for PKG in "${PACKAGES_LIST[@]}"
 do
-    echo "Install $PACKAGE"
+    echo "Install $PKG"
     if ! dnf install -y "$PKG"
     then
         ERROR_PACKAGES_LIST+=("$PKG")

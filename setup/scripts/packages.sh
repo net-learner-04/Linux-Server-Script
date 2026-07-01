@@ -10,6 +10,7 @@ PACKAGES_LIST=(
     # [Core Tools & Utilities]
     "btop" "mdadm" "tmux" "vim" "git" "tree" "bash-completion"
     "curl" "wget" "tar" "unzip" "policycoreutils-python-utils"
+    "smartmontools"
 
     # [Security & Access Control]
     "fail2ban"

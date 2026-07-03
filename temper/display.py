@@ -26,7 +26,10 @@ def draw_graph(dev_temps, width = 30):
 
 def render(dev_temps):
     '''Return the overall device temperature and graph in a 'Rich Table' format.'''
-    table = Table(title="Thermometer")
+    table = Table(title="Thermometer", 
+                  title_justify="left", 
+                  title_style="bold white"
+                  box=rich.box.ROUNDED)
 
     table.add_column("Dev_name", justify="right", no_wrap=True)
     table.add_column("Current_temp", justify="center")

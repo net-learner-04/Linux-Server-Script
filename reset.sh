@@ -7,6 +7,15 @@ then
     exit 1
 fi
 
+clear
+echo "========================================================"
+echo -e "\e[1;31m        [ DISK INITIALIZATION SCRIPT ]    \e[0m"
+echo "========================================================"
+echo " WARNING: This script will permanently erase ALL data."
+echo " Please double-check the target disk before proceeding."
+echo "========================================================"
+echo ""
+
 # Show a list of currently connected block disks.
 echo "=== List of disks on the current system ==="
 lsblk -o NAME,SIZE,TYPE,MOUNTPOINT

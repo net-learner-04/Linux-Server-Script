@@ -11,6 +11,8 @@ URL = f"https://api.openweathermap.org/data/2.5/weather?q={CITY_NAME}&appid={API
 
 
 def get_weather():
+    '''Calls the OpenWeatherMap API to fetch current weather data.
+    Returns (weather, temp, feels_like, humidity) on success, or (None, None, None, None) on failure.'''
     try:
         response = requests.get(url=URL, timeout=3)
 

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+clear
+
 # Repository folder path
 REPO_DIR="/srv/repo"
 

@@ -2,11 +2,14 @@ from rich.console import Console
 from rich.columns import Columns
 from rich.table import Table
 from rich.text import Text
+import time
 
 console = Console()
 
 
 def colorize_usage(value):
+    '''Determines a warning color (red/yellow/green) 
+    based on a usage percentage value.'''
     if value >= 80:
         return "bold red"
     elif value >= 60:
@@ -15,6 +18,7 @@ def colorize_usage(value):
 
 
 def build_weather_text(weather_data, city_name):
+    '''Builds a Rich Table block displaying weather information.'''
     weather = weather_data.get("weather") or "Unknown"
     temp = weather_data.get("temp")
     feels_like = weather_data.get("feels_like")
@@ -23,6 +27,9 @@ def build_weather_text(weather_data, city_name):
     table = Table.grid(padding=(0, 1))
     table.add_column(justify="left")
     table.add_column(justify="left")
+
+    formatted = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    table.add_row("[bold]Time:[/bold]", f"{formatted}")
 
     table.add_row("[bold]City:[/bold]", f"{city_name}")
     table.add_row("[bold]Weather:[/bold]", f"{weather}")
@@ -41,6 +48,7 @@ def build_weather_text(weather_data, city_name):
 
 
 def build_system_text(system_data):
+    '''Builds a Rich Table block displaying server status information.'''
     uptime = system_data.get("uptime") or "N/A"
     cpu = system_data.get("cpu")
     memory = system_data.get("memory")
@@ -74,15 +82,16 @@ def build_system_text(system_data):
     return table
 
 
-def render(art, weather_data, system_data, city_name):
-    art_text = Text(art, style="cyan")
+def render(art, color, weather_data, system_data, city_name):
+    '''Arranges the ASCII art and weather/system info blocks into 3 columns 
+    and prints them to the console.'''
+    art_text = Text(art.strip('\n'), style=color)
 
     weather_block = build_weather_text(weather_data, city_name)
     system_block = build_system_text(system_data)
 
-    info_table = Table.grid(padding=(0, 0))
-    info_table.add_row(weather_block)
-    info_table.add_row(system_block)
-
-    layout = Columns([art_text, info_table], padding=(0, 4), align="center")
+    layout = Columns([art_text, weather_block, system_block], 
+                     padding=(0, 4), 
+                     expand=False, 
+                     align="center")
     console.print(layout)

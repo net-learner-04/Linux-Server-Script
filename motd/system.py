@@ -2,16 +2,19 @@ import psutil, subprocess as sub
 
 
 def time_calculate(sec):
+    '''Converts a seconds value (string) into a 'Nd Nh Nm Ns' formatted string.'''
     total_sec = int(float(sec))
 
     days, remainder = divmod(total_sec, 86400)
     hours, remainder = divmod(remainder, 3600)
     minutes, seconds = divmod(remainder, 60)
 
-    return f"{days} days {hours} hours {minutes} minutes {seconds} seconds"
+    return f"{days}d {hours}h {minutes}m {seconds}s"
 
 
 def get_uptime():
+    '''Reads /proc/uptime and returns system uptime and 
+    idle time as formatted strings.'''
     try:
         with open("/proc/uptime", mode="r") as file:
             contents = file.read().split()
@@ -26,6 +29,7 @@ def get_uptime():
 
 
 def get_dev_info():
+    '''Returns current CPU, memory, and disk usage percentages.'''
     cpu_usage = psutil.cpu_percent(interval=None)
     memory_usage = psutil.virtual_memory().percent
     disk_usage = psutil.disk_usage('/').percent
@@ -34,6 +38,8 @@ def get_dev_info():
 
 
 def get_update_number():
+    '''Checks the number of pending package updates via 
+    dnf check-update and returns a status string.'''
     try:
         result = sub.run(
             ["dnf", "check-update", "-q"],
@@ -59,6 +65,8 @@ def get_update_number():
 
 
 def get_last_login():
+    '''Retrieves the most recent login record via the last command, 
+    returning user/time/IP info as a string.'''
     try:
         result = sub.run(
             ["last", "-2", "--time-format", "iso"],

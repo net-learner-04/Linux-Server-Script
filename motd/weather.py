@@ -1,6 +1,7 @@
 import requests, dotenv, os
+from pathlib import Path
 
-dotenv.load_dotenv()
+dotenv.load_dotenv(Path(__file__).parent / ".env")
 
 API_KEY = os.getenv("WEATHER_API_KEY")
 CITY_NAME = os.getenv("WEATHER_CITY_NAME")

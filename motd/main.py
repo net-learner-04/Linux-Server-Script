@@ -1,5 +1,5 @@
 from display import render
-from ascii_art import get_weather_art
+from ascii_art import get_weather_art, get_weather_color
 from weather import get_weather
 from system import get_uptime, get_dev_info, get_update_number, get_last_login
 import os
@@ -18,6 +18,7 @@ system_data = {
 }
 
 art = get_weather_art(weather)
+color = get_weather_color(weather)
 city_name = os.getenv("WEATHER_CITY_NAME")
 
-render(art, weather_data, system_data, city_name)
+render(art, color, weather_data, system_data, city_name)

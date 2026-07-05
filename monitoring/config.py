@@ -1,6 +1,5 @@
 import os
 
-
 # List of Thresholds 
 THRESHOLDS = {
     "cpu": 85.0,

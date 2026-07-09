@@ -1,6 +1,6 @@
 import logging as log
 import os, sys
-import monitoring.logger as logger
+import logger as logger
 from alert import boot_time_check, update_boot_time
 from alert import last_alert_check, update_last_alert, discord_format, send_message
 from checks import server_status_check, service_status_check

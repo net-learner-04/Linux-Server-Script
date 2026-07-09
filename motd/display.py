@@ -1,6 +1,7 @@
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
+import re
 import time
 
 console = Console()
@@ -65,7 +66,16 @@ def build_system_text(system_data):
         style = "dim" if "up to date" in update_status else "bold yellow"
         table.add_row("[bold]Updates:[/bold]", Text(update_status.replace("Update: ", ""), style=style))
     if last_login:
-        table.add_row("[bold]Last Login:[/bold]", last_login.replace("Last login: ", ""))
+        cleaned_login = last_login.replace("Last login: ", "")
+        # Expecting format like "2026-07-09 17:21:16 (minseo: 192.168.100.2)"
+        # Split into a time part and a "user: ip" part to keep each row short
+        match = re.match(r"^(?P<time>.+?)\s*\((?P<user>[^:]+):\s*(?P<ip>[^)]+)\)$", cleaned_login)
+        if match:
+            table.add_row("[bold]Last Login:[/bold]", match.group("time"))
+            table.add_row("[bold]From:[/bold]", f"{match.group('user')} ({match.group('ip')})")
+        else:
+            # Fallback: format did not match, show as a single row
+            table.add_row("[bold]Last Login:[/bold]", cleaned_login)
     return table
 
 

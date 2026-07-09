@@ -25,7 +25,7 @@ def setup_audit_rules():
 
     try:
         # Add a rule to monitor sensitive files.
-        sub.run(["auditctl", "-w", "/etc/passwd", "-p", "wv", "-k", FILE_KEY], check=True)
+        sub.run(["auditctl", "-w", "/etc/passwd", "-p", "wa", "-k", FILE_KEY], check=True)
         # Add a rule to monitor command execution (execve system call).
         sub.run(["auditctl", "-a", "always,exit", "-F", "arch=b64", "-S", "execve", "-k", EXEC_KEY], check=True)
     except sub.CalledProcessError as e:

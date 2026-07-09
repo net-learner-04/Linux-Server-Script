@@ -147,7 +147,10 @@ jq -n \
 }')
 
 # Send payload to Discord webhook and capture HTTP response code
+# --max-time limits how long curl can block, so a slow/unreachable
+# Discord endpoint never delays the SSH login/logout itself
 STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+    --max-time 5 \
     -X POST \
     -H "Content-Type: application/json" \
     -d "$EMBEDS" \
@@ -158,5 +161,5 @@ if [[ "$STATUS" -eq 200 || "$STATUS" -eq 204 ]]
 then
     echo "$TIMESTAMP Discord notification sent successfully." >> "$LOG_PATH"
 else
-    echo "$TIMESTAMP Failed to send Discord notification." >> "$LOG_PATH"
+    echo "$TIMESTAMP Failed to send Discord notification (status: $STATUS)." >> "$LOG_PATH"
 fi

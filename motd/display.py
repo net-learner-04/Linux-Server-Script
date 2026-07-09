@@ -8,8 +8,8 @@ console = Console()
 
 
 def colorize_usage(value):
-    '''Determines a warning color (red/yellow/green) 
-    based on a usage percentage value.'''
+    """Determines a warning color (red/yellow/green)
+    based on a usage percentage value."""
     if value >= 80:
         return "bold red"
     elif value >= 60:
@@ -17,77 +17,112 @@ def colorize_usage(value):
     return "bold green"
 
 
-def build_weather_text(weather_data, city_name):
-    '''Builds a Rich Table block displaying weather information.'''
+def build_weather_text(weather_data, city_name, uptime):
+    """Builds a Rich Table block displaying weather information."""
     weather = weather_data.get("weather") or "Unknown"
     temp = weather_data.get("temp")
     feels_like = weather_data.get("feels_like")
     humidity = weather_data.get("humidity")
+
     table = Table.grid(padding=(0, 1))
     table.add_column(justify="left")
     table.add_column(justify="left")
+
     formatted = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-    table.add_row("[bold]Time:[/bold]", f"{formatted}")
-    table.add_row("[bold]City:[/bold]", f"{city_name}")
-    table.add_row("[bold]Weather:[/bold]", f"{weather}")
+
+    table.add_row("[bold]Time:[/bold]", formatted)
+    table.add_row("[bold]Uptime:[/bold]", uptime or "N/A")
+    table.add_row("[bold]City:[/bold]", city_name)
+    table.add_row("[bold]Weather:[/bold]", weather)
+
     if temp is not None and feels_like is not None:
-        table.add_row("[bold]Temp:[/bold]", f"{temp}°C (feels like {feels_like}°C)")
+        table.add_row(
+            "[bold]Temp:[/bold]",
+            f"{temp}°C (feels like {feels_like}°C)"
+        )
     else:
         table.add_row("[bold]Temp:[/bold]", "N/A")
+
     if humidity is not None:
         table.add_row("[bold]Humidity:[/bold]", f"{humidity}%")
     else:
         table.add_row("[bold]Humidity:[/bold]", "N/A")
+
     return table
 
 
 def build_system_text(system_data):
-    '''Builds a Rich Table block displaying server status information.'''
-    uptime = system_data.get("uptime") or "N/A"
+    """Builds a Rich Table block displaying server status information."""
     cpu = system_data.get("cpu")
     memory = system_data.get("memory")
     disk = system_data.get("disk")
     update_status = system_data.get("update_status") or ""
     last_login = system_data.get("last_login") or ""
+
     table = Table.grid(padding=(0, 1))
     table.add_column(justify="left")
     table.add_column(justify="left")
-    table.add_row("[bold]Uptime:[/bold]", uptime)
+
     if cpu is not None:
         style = colorize_usage(cpu)
         table.add_row("[bold]CPU:[/bold]", Text(f"{cpu}%", style=style))
+
     if memory is not None:
         style = colorize_usage(memory)
         table.add_row("[bold]Memory:[/bold]", Text(f"{memory}%", style=style))
+
     if disk is not None:
         style = colorize_usage(disk)
         table.add_row("[bold]Disk:[/bold]", Text(f"{disk}%", style=style))
+
     if update_status:
         style = "dim" if "up to date" in update_status else "bold yellow"
-        table.add_row("[bold]Updates:[/bold]", Text(update_status.replace("Update: ", ""), style=style))
+        table.add_row(
+            "[bold]Updates:[/bold]",
+            Text(update_status.replace("Update: ", ""), style=style)
+        )
+
     if last_login:
         cleaned_login = last_login.replace("Last login: ", "")
-        # Expecting format like "2026-07-09 17:21:16 (minseo: 192.168.100.2)"
-        # Split into a time part and a "user: ip" part to keep each row short
-        match = re.match(r"^(?P<time>.+?)\s*\((?P<user>[^:]+):\s*(?P<ip>[^)]+)\)$", cleaned_login)
+        match = re.match(
+            r"^(?P<time>.+?)\s*\((?P<user>[^:]+):\s*(?P<ip>[^)]+)\)$",
+            cleaned_login
+        )
+
         if match:
             table.add_row("[bold]Last Login:[/bold]", match.group("time"))
-            table.add_row("[bold]From:[/bold]", f"{match.group('user')} ({match.group('ip')})")
+            table.add_row("[bold]User:[/bold]", match.group("user"))
+            table.add_row("[bold]From:[/bold]", match.group("ip"))
         else:
-            # Fallback: format did not match, show as a single row
             table.add_row("[bold]Last Login:[/bold]", cleaned_login)
+
     return table
 
 
 def render(art, color, weather_data, system_data, city_name):
-    '''Arranges the ASCII art and weather/system info blocks into 3 columns 
-    and prints them to the console.'''
-    art_text = Text(art.strip('\n'), style=color)
-    weather_block = build_weather_text(weather_data, city_name)
+    """Arranges the ASCII art and weather/system info blocks into 3 columns
+    and prints them to the console."""
+    print("\n")
+    art_text = Text(art.strip("\n"), style=color)
+
+    weather_block = build_weather_text(
+        weather_data,
+        city_name,
+        system_data.get("uptime")
+    )
+
     system_block = build_system_text(system_data)
+
     layout = Table.grid(padding=(0, 4), expand=False)
     layout.add_column()
     layout.add_column()
     layout.add_column()
-    layout.add_row(art_text, weather_block, system_block)
+
+    layout.add_row(
+        art_text,
+        weather_block,
+        system_block
+    )
+
     console.print(layout)
+    print("\n")

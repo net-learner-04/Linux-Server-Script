@@ -1,26 +1,22 @@
 from rich.table import Table
 from logger import read_log
 
-BRAILLE = ["⣀", "⣤", "⣶", "⣿"]
+BRAILLE = ["⠀", "⡀", "⣀", "⣄", "⣤", "⣦", "⣶", "⣷", "⣿"]
 
-
-def draw_graph(dev_temps, width = 30):
+def draw_graph(dev_temps, width=30):
     '''Receives a list of temperatures 
     and returns a graph string converted to Braille.'''
     if not dev_temps:
         return "No data."
-
     temps = [temp for _, temp in dev_temps[-width:]]
     min_temp, max_temp = min(temps), max(temps)
-
     if min_temp == max_temp:
-        return BRAILLE[0] * len(temps)
+        return BRAILLE[-1] * len(temps)
     
     result = ""
     for temp in temps:
         index = round((temp - min_temp) / (max_temp - min_temp) * (len(BRAILLE) - 1))
         result += BRAILLE[index]
-
     return result
 
 

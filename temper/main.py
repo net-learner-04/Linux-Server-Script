@@ -1,4 +1,4 @@
-import time, sys, os
+import time, sys, os, subprocess as sub
 from rich.console import Console
 from rich.live import Live
 from collectors import all_dev_temp
@@ -9,6 +9,7 @@ from config import INTERVAL
 
 def root_check():
     '''A function to check if the program is running with root privileges'''
+    sub.run(["clear"])
     if os.getuid() != 0:
         print("Run as root.")
         sys.exit(os.EX_NOPERM)

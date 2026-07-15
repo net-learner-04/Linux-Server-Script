@@ -8,17 +8,41 @@ from logging.handlers import TimedRotatingFileHandler
 # execute the code using the command. -> nohup python(3) <file name>.py &
 
 
+# Fall back process
+try:
+    STDLIB_MODULES = sys.stdlib_module_names
+except AttributeError:
+    import distutils.sysconfig as sysconfig
+    import os as _os
+
+    STDLIB_MODULES = set(sys.builtin_module_names)
+
+    stdlib_path = sysconfig.get_python_lib(standard_lib=True)
+    if _os.path.isdir(stdlib_path):
+        for name in _os.listdir(stdlib_path):
+            if name.endswith(".py"):
+                STDLIB_MODULES.add(name[:-3])
+            elif _os.path.isdir(_os.path.join(stdlib_path, name)) and not name.startswith("_"):
+                STDLIB_MODULES.add(name)
+
+    dynload_path = _os.path.join(stdlib_path, "lib-dynload")
+    if _os.path.isdir(dynload_path):
+        for name in _os.listdir(dynload_path):
+            mod_name = name.split(".")[0]
+            STDLIB_MODULES.add(mod_name)
+
+
 DIRECTORY_PATH = pathlib.Path(__file__).parent
 
 MODULES_FILE = DIRECTORY_PATH / "modules.txt"
 
 def mkdir_log():
-    os.makedirs(os.path.join(os.path.dirname(__file__), "log"), exist_ok=True)
+    os.makedirs(os.path.join(os.path.dirname(__file__), "watchdog_log"), exist_ok=True)
 
 mkdir_log()
 
 handler = TimedRotatingFileHandler(
-    filename=os.path.join(os.path.dirname(__file__), "log", "watchdog.log"),
+    filename=os.path.join(os.path.dirname(__file__), "watchdog_log", "watchdog.log"),
     when="midnight",
     backupCount=7
 )
@@ -40,6 +64,9 @@ class Target:
     def run(self):
         event_handler = Handler()
         self.observer.schedule(event_handler, self.watchDir, recursive=True)
+
+        result = scan_directory(self.watchDir)
+        update_txt(result, MODULES_FILE)
 
         self.observer.start()
         try:
@@ -77,7 +104,7 @@ def root_check():
 
 
 def parse_import(file_path):
-    '''A function that parses a single ‘.py’ file using ast and returns a set of module names.'''
+    '''A function that parses a single '.py' file using ast and returns a set of module names.'''
     return_module = set()
 
     try:
@@ -85,15 +112,21 @@ def parse_import(file_path):
             python_file = file.read()
             modules = ast.parse(python_file)
             imports = [value for value in ast.walk(modules) if isinstance(value, (ast.Import, ast.ImportFrom))]
-        
+
         for module in imports:
             if isinstance(module, ast.Import):
                 for alias in module.names:
-                    if alias.name not in sys.stdlib_module_names:
-                        return_module.add(alias.name)
+                    top_level = alias.name.split(".")[0]
+                    if top_level not in STDLIB_MODULES:
+                        return_module.add(top_level)
             elif isinstance(module, ast.ImportFrom):
-                if module.module is not None and module.module not in sys.stdlib_module_names:
-                    return_module.add(module.module)
+                if module.module is None:
+                    continue
+                if module.level and module.level > 0:
+                    continue
+                top_level = module.module.split(".")[0]
+                if top_level not in STDLIB_MODULES:
+                    return_module.add(top_level)
     except SyntaxError:
         log.warning(f"Skipping {file_path} due to syntax error.")
 

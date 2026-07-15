@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# path: /usr/local/bin/ssh_notify.sh
+# [!] Must copy or move ssh_notify.sh file's location.
+# absolute path: /usr/local/bin/ssh_notify.sh
 
 
 WEBHOOK_PATH="/etc/ssh_notify/discord_webhook.conf"

@@ -165,7 +165,7 @@ def start():
                     uid_val = parsed_data.get("uid", "Unknown")
 
                     alert_msg = (
-                        f"[!] ALERT Sensitive file access detected\n"
+                        f"    ALERT Sensitive file access detected\n"
                         f"    Target: /etc/passwd\n"
                         f"    Program: {exe_path}\n"
                         f"    UID: {uid_val}\n"
@@ -195,7 +195,8 @@ def start():
             current_time = datetime.now()
             elapsed = (current_time - start_time).total_seconds()
 
-            if elapsed >= 3600:
+            # Command monitoring time (in seconds)
+            if elapsed >= 300:
                 if reports:
                     report_msg = f"EXEC Report\n" + "\n".join(reports)
                     MESSAGE_QUEUE.append(report_msg)

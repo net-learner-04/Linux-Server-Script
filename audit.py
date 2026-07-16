@@ -133,8 +133,8 @@ def send_discord_server(message):
                 return True
             else:
                 print(f"Discord transmission response status error: {response.status}")
-    except Exception as e:
-        print(f"Failed to send Discord notification: {e}")
+    except urllib.error.HTTPError as e:
+        print(f"Failed to send Discord notification: {e.code}: {e.read().decode()}")
     return False
 
 

@@ -32,6 +32,9 @@ fi
 CRON_JOB="*/5 * * * * cd $SCRIPT_DIR && /usr/bin/python3 main.py"
 
 # Command to Prevent Duplicate Registrations.
-(crontab -u "$TARGET_USER" -l 2>/dev/null | grep -v "main.py"; echo "$CRON_JOB") | crontab -u "$TARGET_USER" -
+(
+    crontab -u "$TARGET_USER" -l 2>/dev/null | grep -Fxv "$CRON_JOB"
+    echo "$CRON_JOB"
+) | crontab -u "$TARGET_USER" -
 
 echo "Cron job registered for user '$TARGET_USER': $CRON_JOB"

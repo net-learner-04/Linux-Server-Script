@@ -29,6 +29,13 @@ DIR_PATH = Path(__file__).parent / "power_cost_logs"
 RATE_PER_KWH = 250
 
 
+def root_check():
+    '''A function to check if the program is running with root privileges'''
+    if os.geteuid() != 0:
+        print("Run as root.")
+        sys.exit(os.EX_NOPERM)
+
+
 def detect_cpu_vendor():
     dev_info = dict()
 
@@ -239,6 +246,7 @@ def send_to_discord(total_uptime, total_kwh, cost):
 
 
 def start():
+    root_check()
     method = detect_power_method()
     log_path = create_daily_log_file()
     write_log(log_path, method)

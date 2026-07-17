@@ -16,6 +16,43 @@ LAST_SENT = 0
 # sec
 INTERVAL = 10
 
+# Discord's hard limit is 2000 chars per message; keep some margin.
+DISCORD_LIMIT = 1900
+
+# Keywords used to filter EXECVE command lines that are actually worth reporting.
+# Matched against the binary/interpreter name (no options) so variants like
+# python3, python3.11, /usr/bin/python are all caught by "python".
+# Short tokens (nc, su, sh, dd, etc.) are matched with word boundaries in
+# is_suspicious() to avoid false positives like "sync", "bash", "disk".
+KEYWORDS = [
+    "wget", "curl",
+    "nc", "ncat", "netcat",
+    "chmod",
+    "base64",
+    "/etc/shadow", "/etc/sudoers",
+    "rm",
+    "sudo", "su",
+    "python", "python3", "perl", "ruby",
+    "bash", "sh", "zsh", "dash",
+    "history",
+    "iptables", "nft",
+    "crontab",
+    "ssh-keygen", "authorized_keys",
+    "dd",
+    "nohup", "disown",
+]
+
+# Pre-compile a single regex with word boundaries for accurate matching.
+_KEYWORD_PATTERN = re.compile(
+    r"\b(?:" + "|".join(re.escape(k) for k in KEYWORDS) + r")\b",
+    re.IGNORECASE
+)
+
+
+def is_suspicious(cmd_line: str) -> bool:
+    '''Check whether a command line contains any keyword worth reporting.'''
+    return bool(_KEYWORD_PATTERN.search(cmd_line))
+
 
 def setup_audit_rules():
     '''Set up audit rules to monitor sensitive file access and process execution using auditctl. 
@@ -115,27 +152,38 @@ def flush(force=False):
 
 def send_discord_server(message):
     '''Send a message to a Discord webhook for alerting or reporting events.'''
-    json_data = {
-        "content": message
-    }
+    # Split the message into Discord-safe chunks so long reports don't trigger a 400 error.
+    chunks = [message[i:i + DISCORD_LIMIT] for i in range(0, len(message), DISCORD_LIMIT)]
 
-    try:
-        data = json.dumps(json_data).encode("utf-8")
+    success = True
 
-        req = urllib.request.Request(
-            WEBHOOK,
-            data = data,
-            headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"}
-        )
+    for chunk in chunks:
+        json_data = {
+            "content": chunk
+        }
 
-        with urllib.request.urlopen(req) as response:
-            if response.status == 204:
-                return True
-            else:
-                print(f"Discord transmission response status error: {response.status}")
-    except urllib.error.HTTPError as e:
-        print(f"Failed to send Discord notification: {e.code}: {e.read().decode()}")
-    return False
+        try:
+            data = json.dumps(json_data).encode("utf-8")
+
+            req = urllib.request.Request(
+                WEBHOOK,
+                data = data,
+                headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"}
+            )
+
+            with urllib.request.urlopen(req) as response:
+                if response.status != 204:
+                    print(f"Discord transmission response status error: {response.status}")
+                    success = False
+        except urllib.error.HTTPError as e:
+            print(f"Failed to send Discord notification: {e.code}: {e.read().decode()}")
+            success = False
+
+        # Small delay between chunks to avoid hitting Discord's rate limit.
+        if len(chunks) > 1:
+            time.sleep(1)
+
+    return success
 
 
 def start():
@@ -190,7 +238,15 @@ def start():
                     if len(buffer) > 10000:
                         buffer.clear()
 
-                    reports.append(" ".join(buffer[msg_id]["args"]))
+                    cmd_line = " ".join(buffer[msg_id]["args"])
+
+                    # Only keep command lines that match a known suspicious keyword,
+                    # so reports stay short and relevant instead of hitting Discord's length limit.
+                    if is_suspicious(cmd_line):
+                        exe = buffer[msg_id]["exe"]
+                        uid = buffer[msg_id]["uid"]
+                        reports.append(f"[{exe} / uid={uid}] {cmd_line}")
+
                     buffer.pop(msg_id)
             current_time = datetime.now()
             elapsed = (current_time - start_time).total_seconds()

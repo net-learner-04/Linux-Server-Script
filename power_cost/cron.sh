@@ -6,7 +6,7 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Ask for the account name to register the crontab under.
-read -r -p "Enter the account name to register the cron job for: " TARGET_USER
+read -p "Enter the account name to register the cron job for: " TARGET_USER
 
 # Verify the input is not empty.
 if [ -z "$TARGET_USER" ]
@@ -32,6 +32,9 @@ fi
 CRON_JOB="*/10 * * * * cd $SCRIPT_DIR && /usr/bin/python3 main.py"
 
 # Command to Prevent Duplicate Registrations.
-(crontab -u "$TARGET_USER" -l 2>/dev/null | grep -v "main.py"; echo "$CRON_JOB") | crontab -u "$TARGET_USER" -
+(
+    crontab -u "$TARGET_USER" -l 2>/dev/null | grep -Fxv "$CRON_JOB"
+    echo "$CRON_JOB"
+) | crontab -u "$TARGET_USER" -
 
 echo "Cron job registered for user '$TARGET_USER': $CRON_JOB"

@@ -18,7 +18,7 @@ THRESHOLDS = {
 }
 
 # Adjust according to your server environment.
-SERVICES = ["nginx", "sshd", "httpd"]
+SERVICES = ["sshd", "tailscaled", "cloudflared"]
 
 # minutes
 COOLDOWN = 15 

@@ -7,12 +7,12 @@ from checks import server_status_check, service_status_check
 from config import BOOTFILE
 
 
-def root_check():
-    '''A function to check if the program is running with root privileges'''
-    if os.geteuid() != 0:
-        log.critical("Root privilege required to run this script.")
-        print("Run as root.")
-        sys.exit(os.EX_NOPERM)
+# def root_check():
+#     '''A function to check if the program is running with root privileges'''
+#     if os.geteuid() != 0:
+#         log.critical("Root privilege required to run this script.")
+#         print("Run as root.")
+#         sys.exit(os.EX_NOPERM)
 
 
 def start():
@@ -34,5 +34,4 @@ def start():
 
 
 if __name__ == "__main__":
-    log.info("Start the system monitoring process.")
     start()

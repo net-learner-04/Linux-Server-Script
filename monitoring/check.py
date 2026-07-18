@@ -1,13 +1,15 @@
 import logging as log
 import threading as thr
 import subprocess as sub
-import psutil, os, time, re
-
+import psutil, os, time, re, shutil
 from config import THRESHOLDS, SERVICES
 
 
+SYSTEMCTL_BIN = shutil.which("systemctl") or "/usr/bin/systemctl"
+
+
 def server_status_check():
-    '''Use `psutil` to check CPU, memory, and disk usage 
+    '''Use `psutil` to check CPU, memory, and disk usage
     and determine whether they exceed a threshold (e.g., 85%)'''
     warn_list = []
     result = {}
@@ -78,37 +80,60 @@ def server_status_check():
 
 
 def service_status_check():
-    '''Function to check the status of essential services (httpd, nginx, sshd, etc.).'''
+    '''Function to check the status of essential services (httpd, nginx, sshd, etc.)'''
     warn_list = []
 
     for service in SERVICES:
-        # sub.DEVNULL : Hide Terminal std Output
-        if sub.run(["systemctl", "is-active", service], stdout=sub.DEVNULL, stderr=sub.DEVNULL).returncode != 0:
-            log.warning(f"The {service} is currently disabled. Attempting to restart...")
-            if sub.run(["systemctl", "restart", service], stdout=sub.DEVNULL, stderr=sub.DEVNULL).returncode == 0:
-                log.info(f"The {service} restart success.")
-                warn_list.append(f"SERVICE: {service} -> Automatic restart successful.")
-            else:
-                log.error(f"The {service} restart failed.")
-                warn_list.append(f"SERVICE: {service} -> Automatic restart failed.")
+        try:
+            # sub.DEVNULL : Hide Terminal std Output
+            is_active = sub.run(
+                [SYSTEMCTL_BIN, "is-active", service],
+                stdout=sub.DEVNULL, stderr=sub.DEVNULL
+            )
+            if is_active.returncode != 0:
+                log.warning(f"The {service} is currently disabled. Attempting to restart...")
+                restart = sub.run(
+                    [SYSTEMCTL_BIN, "restart", service],
+                    stdout=sub.DEVNULL, stderr=sub.DEVNULL
+                )
+                if restart.returncode == 0:
+                    log.info(f"The {service} restart success.")
+                    warn_list.append(f"SERVICE: {service} -> Automatic restart successful.")
+                else:
+                    log.error(f"The {service} restart failed.")
+                    warn_list.append(f"SERVICE: {service} -> Automatic restart failed.")
+        except FileNotFoundError as e:
+            log.error(f"systemctl not found while checking {service}: {e}")
+            warn_list.append(f"SERVICE: {service} -> systemctl not found (check PATH).")
+        except PermissionError as e:
+            log.error(f"Permission denied while restarting {service}: {e}")
+            warn_list.append(f"SERVICE: {service} -> Permission denied (needs root/sudo).")
 
     return warn_list
 
 
 def return_disks():
+    '''Return the names of physical disk devices with mounted partitions.'''
     disks = set()
 
     for disk in psutil.disk_partitions():
         device = os.path.basename(disk.device)
         match = re.match(r"(nvme\d+n\d+|[a-z]+)", device)
-        if match:
-            disks.add(match.group(1))
+        if not match:
+            continue
+
+        base = match.group(1)
+
+        if not os.path.exists(f"/sys/block/{base}/device"):
+            continue
+
+        disks.add(base)
 
     return disks
 
 
 def disk_io_check():
-    '''A function that classifies all disks on the server as HDD or SSD 
+    '''A function that classifies all disks on the server as HDD or SSD
     and returns their respective read and write speeds in MB/s.'''
     wait_time = 2.0
     disks = return_disks()
@@ -119,7 +144,10 @@ def disk_io_check():
     ssd_write = 0
 
     for disk in disks:
-        with open(f"/sys/block/{disk}/queue/rotational", mode="r") as file:
+        rotational_path = f"/sys/block/{disk}/queue/rotational"
+        if not os.path.exists(rotational_path):
+            continue
+        with open(rotational_path, mode="r") as file:
             rotational = file.read().strip()
             if rotational == "0":
                 disk_type[disk] = "ssd"
@@ -131,6 +159,10 @@ def disk_io_check():
     after = psutil.disk_io_counters(perdisk=True)
 
     for disk, dtype in disk_type.items():
+        if disk not in before or disk not in after:
+            log.warning(f"Disk '{disk}' not found in disk_io_counters, skipping.")
+            continue
+
         read = (max(0, (after[disk].read_bytes - before[disk].read_bytes)) / wait_time) / (1024 ** 2)
         write = (max(0, (after[disk].write_bytes - before[disk].write_bytes)) / wait_time) / (1024 ** 2)
 
@@ -147,9 +179,9 @@ def disk_io_check():
 def file_descriptor_check():
     '''A function that returns the system-wide file descriptor usage rate as a percentage.'''
     path = "/proc/sys/fs/file-nr"
+    usage = 0.0
     with open(path, mode="r") as file:
         contents = file.read().split()
-        usage = 0.0
         try:
             usage = int(contents[0]) / int(contents[2]) * 100
         except ZeroDivisionError as e:
@@ -193,7 +225,7 @@ def temperatures_check():
 
 
 def network_traffic_check():
-    '''A function that compares the transmitted and received bytes, 
+    '''A function that compares the transmitted and received bytes,
     converts the result to MB/s, and returns it.'''
     wait_time = 2.0
 

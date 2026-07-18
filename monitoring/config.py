@@ -18,7 +18,7 @@ THRESHOLDS = {
 }
 
 # Adjust according to your server environment.
-SERVICES = ["sshd", "tailscaled", "cloudflared"]
+SERVICES = ["sshd", "tailscaled", "fail2ban", "firewalld"]
 
 # minutes
 COOLDOWN = 15 

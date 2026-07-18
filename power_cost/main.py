@@ -237,14 +237,35 @@ def is_last_day_of_month():
 
 def send_to_discord(total_uptime, total_kwh, cost):
     """Send a monthly usage/cost summary message to the configured Discord webhook."""
-    message = (
-        f"{date.today().month} Electricity Usage Report\n"
-        f"Total Uptime: {total_uptime / 3600:.2f}\n"
-        f"Estimated Electricity Consumption: {total_kwh:.3f} kWh\n"
-        f"Estimated Electricity Bill: {cost:,.0f} ₩"
-    )
+    month = date.today().month
 
-    payload = {"content": message}
+    embed = {
+        "title": f"{month} Month Electricity Usage Report",
+        "color": 0xF1C40F,
+        "fields": [
+            {
+                "name": "Total Uptime",
+                "value": f"{total_uptime / 3600:.2f} hours",
+                "inline": True
+            },
+            {
+                "name": "Estimated Electricity Consumption",
+                "value": f"{total_kwh:.3f} kWh",
+                "inline": True
+            },
+            {
+                "name": "Estimated Electricity Bill",
+                "value": f"{cost:,.0f} KRW",
+                "inline": True
+            }
+        ],
+        "footer": {
+            "text": "Power Cost Monitor"
+        },
+        "timestamp": datetime.now().isoformat()
+    }
+
+    payload = {"embeds": [embed]}
 
     try:
         response = requests.post(WEBHOOK_URL, json=payload)

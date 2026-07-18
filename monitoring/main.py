@@ -3,7 +3,7 @@ import os, sys
 import logger as logger
 from alert import boot_time_check, update_boot_time
 from alert import last_alert_check, update_last_alert, discord_format, send_message
-from checks import server_status_check, service_status_check
+from check import server_status_check, service_status_check
 from config import BOOTFILE
 
 
@@ -16,7 +16,7 @@ from config import BOOTFILE
 
 
 def start():
-    root_check()
+    # root_check()
     system_warn_list = server_status_check()
     service_warn_list = service_status_check()
     errors = system_warn_list + service_warn_list

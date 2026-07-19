@@ -1,9 +1,6 @@
-# External Python modules (download required)
 import requests
-# Built-in Python Modules
 from datetime import datetime, date
-from config import WEBHOOK_URL
-
+import config
 
 def send_to_discord(total_uptime, total_kwh, cost):
     """Send a monthly usage/cost summary message to the configured Discord webhook."""
@@ -38,7 +35,7 @@ def send_to_discord(total_uptime, total_kwh, cost):
     payload = {"embeds": [embed]}
 
     try:
-        response = requests.post(WEBHOOK_URL, json=payload)
+        response = requests.post(config.WEBHOOK_URL, json=payload)
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
         print(f"Discord Transfer Failed: {e}")

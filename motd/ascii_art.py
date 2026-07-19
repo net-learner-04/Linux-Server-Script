@@ -1,97 +1,37 @@
-weather_art = {
-    "clear": r"""
-        .
-      \ | /
-    '-.;;;.-'
-   -==;;;;;==-
-    .-';;;'-.
-      / | \
-        '
-""",
-    "cloudy": r"""
-   __   _
- _(  )_( )_
-(_   _    _)
-  (_) (__)
-""",
-    "rain": r"""
-      __   _
-    _(  )_( )_
-   (_   _    _)
-  / /(_) (__)
- / / / / / /
-/ / / / / /
-""",
-    "snow": r"""
-.      .
-    _\/  \/_
-     _\/\/_
- _\_\_\/\/_/_/_
-  / /_/\/\_\ \
-     _/\/\_
-     /\  /\
-    '      '
-""",
-    "thunderstorm": r"""
-( (    _-_-_-_- -
- ( (   )- - -
-  ( ( ) )
- (_(___)_)
-    _<
-   / /\
-_____\ _________
-""",
-    "tornado": r"""
---_-_-_-_---
-   -_-_-_
-    -_-_-
-     -__-
-    _-_
-   _-
-   -_
-    _-_
+import random
+
+
+art = r"""
+⣿⠛⠛⠛⠛⠻⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠛⢛⣿⠋⢀⡾⠃⠀⠀⠀⠀⢀⣤⣤⠤⠤⣤⣤⣀⣀⣀⣠⠶⡶⣤⣀⣠⠾⡷⣦⣀⣤⣤⡤⠤⠦⢤⣤⣄⡀⠀⢠⡶⢶⡄⠀⠀
+⢠⡟⠁⣴⣿⢤⡄⣴⢶⠶⡆⠈⢷⡀⠀⠀⠀⠀⢀⣭⣫⠵⠥⠽⣄⣝⠵⢍⣘⣄⠳⣤⣀⠀⠀⢀⡤⠊⣽⠁⠀⠸⣇⠀⢿⠀⠀
+⠸⢷⣴⣤⡤⠾⠇⣽⠋⠼⣷⠀⠈⢷⡄⢀⣤⡶⠋⠀⣀⡄⠤⠀⡲⡆⠀⠀⠈⠙⡄⠘⢮⢳⡴⠯⣀⢠⡏⠀⠀⠀⢻⠀⢸⠇⠀
+⠀⠀⠀⠀⠀⠀⠀⠙⠛⠋⠉⢀⣴⠟⠉⢯⡞⡠⢲⠉⣼⠀⠀⡰⠁⡇⢀⢷⠀⣄⢵⠀⠈⡟⢄⠀⠀⠙⢷⣤⣤⣤⡿⢢⡿⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠟⠑⠊⠁⡼⣌⢠⢿⢸⢸⡀⢰⠁⡸⡇⡸⣸⢰⢈⠘⡄⠀⢸⠀⢣⡀⠀⠈⢮⢢⣏⣤⡾⠃⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣯⣴⠞⡠⣼⠁⡘⣾⠏⣿⢇⣳⣸⣞⣀⢱⣧⣋⣞⡜⢳⡇⠀⢸⠀⢆⢧⠀⠰⣄⢏⢧⣾⠁⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢹⡏⢰⠁⡻⠀⡟⡏⠉⠀⣀⠀⠀⠀⠀⣀⠁⠀⠉⠛⢽⠇⠀⣼⡆⠈⡆⠃⠀⡏⠻⣾⣽⣇⡀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠁⡇⠀⡇⡄⣿⠷⠿⠿⠛⠀⠀⠀⠀⠛⠻⠿⠿⠿⡜⢀⡴⡟⢸⣸⡼⠀⠀⡇⠀⡞⡆⢻⠙⢦⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡶⢀⣼⣿⣬⣽⠧⠬⠇⠀⠀⠀⠀⠀⠀⢞⣯⣭⢺⣔⣪⣾⣤⠺⡇⢳⠀⢠⣧⡾⠛⠛⠻⠶⠞⠁
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠷⢿⠟⠉⡀⠈⢦⡀⠀⠀⣠⠖⠒⠒⢤⡀⠀⢀⡼⠿⢇⡣⢬⣶⠷⢿⣤⡾⠁⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠷⠾⠷⠖⠛⠛⠲⠶⠿⠤⣤⠤⠤⢷⣶⠋⠀⠀⠀⣱⠞⠁⠀⠈⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠓⠒⠚⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 """
-}
 
 
-OWM_TO_CATEGORY = {
-    "Clear": "clear",
-    "Clouds": "cloudy",
-    "Mist": "cloudy",
-    "Smoke": "cloudy",
-    "Haze": "cloudy",
-    "Fog": "cloudy",
-    "Dust": "cloudy",
-    "Sand": "cloudy",
-    "Ash": "cloudy",
-    "Squall": "cloudy",
-    "Rain": "rain",
-    "Drizzle": "rain",
-    "Snow": "snow",
-    "Thunderstorm": "thunderstorm",
-    "Tornado": "tornado",
-}
+# Color list
+COLORS = [
+    "#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE1FF",
+    "#D7BAFF", "#E0BBE4", "#FEC8D8", "#FFDAC1", "#B5EAD7",
+    "#C7CEEA", "#CDE7BE", "#F6DFEB", "#FBE7C6", "#A0E7E5",
+    "#B4F8C8", "#D4F0F0", "#F9F7CF", "#E2F0CB", "#D0F4DE",
+    "#F8C8DC", "#C9E4DE", "#D6EADF", "#E4C1F9", "#A9DEF9",
+    "#FCF6BD", "#FFD6A5", "#FDFFB6", "#CAFFBF", "#9BF6FF"
+]
 
 
-COLORS = {
-    "clear": "khaki1",
-    "cloudy": "steel_blue1",
-    "rain": "sky_blue1",
-    "snow": "bright_cyan",
-    "thunderstorm": "medium_purple",
-    "tornado": "slate_blue1",
-}
+def get_art(owm_main):
+    return art
 
 
-def get_weather_art(owm_main):
-    '''Maps an OWM weather value to a category and 
-    returns the corresponding ASCII art string.'''
-    category = OWM_TO_CATEGORY.get(owm_main, "cloudy")
-    return weather_art.get(category, weather_art["cloudy"])
-
-
-def get_weather_color(owm_main):
-    '''Maps an OWM weather value to a category 
-    and returns the corresponding color name.'''
-    category = OWM_TO_CATEGORY.get(owm_main, "cloudy")
-    return COLORS.get(category, "cyan")
+def get_color(owm_main):
+    return random.choice(COLORS)

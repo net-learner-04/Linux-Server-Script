@@ -1,7 +1,4 @@
-# External Python modules (download required)
-import dotenv
-# Built-in Python Modules
-import os, sys
+import os, sys, dotenv
 from pathlib import Path
 
 dotenv.load_dotenv(Path(__file__).parent / ".env")
@@ -21,7 +18,7 @@ LOAD = 6.1
 # directory path
 DIR_PATH = Path(__file__).parent / "power_cost_logs"
 
-# Use the actual average unit price
+# Use the actual average unit price 
 # from your most recent electricity bill.
 # based on Korean standards
 RATE_PER_KWH = 250

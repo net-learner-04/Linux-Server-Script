@@ -105,6 +105,7 @@ def render(art, color, weather_data, system_data, city_name):
     
     art_text = Text(art.strip("\n"), style=color)
     console.print(art_text)
+    print("\n")
 
     weather_block = build_weather_text(
         weather_data,

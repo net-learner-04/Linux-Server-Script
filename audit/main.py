@@ -9,6 +9,8 @@ from parser import parse_audit_log, is_suspicious
 from discord import send_discord_server
 
 
+# Run in the background using tmux.
+
 # Load environment variables
 load_dotenv()
 

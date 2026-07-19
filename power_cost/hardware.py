@@ -1,8 +1,4 @@
-# External Python modules (download required)
-import pynvml
-# Built-in Python Modules
-import os
-
+import os, pynvml
 
 def detect_cpu_vendor():
     """Return 'intel', 'amd', or None based on /proc/cpuinfo vendor_id."""
@@ -42,19 +38,3 @@ def check_gpu():
         return count > 0
     except Exception:
         return False
-
-
-def detect_power_method():
-    """Determine the best available power measurement method for this system."""
-    vendor = detect_cpu_vendor()
-    gpu_available = check_gpu()
-
-    if vendor == "intel" and check_rapl():
-        base_method = "rapl"
-    else:
-        base_method = "estimated"
-
-    if gpu_available:
-        return base_method + "_plus_gpu"
-    else:
-        return base_method

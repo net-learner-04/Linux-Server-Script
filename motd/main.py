@@ -1,7 +1,7 @@
 import os, csv
 from pathlib import Path
 from display import render
-from ascii_art import get_weather_art, get_weather_color
+from ascii_art import get_art, get_color
 from system import get_uptime, get_dev_info, get_update_number, get_last_login
 
 # Path to the cached weather log file
@@ -49,8 +49,8 @@ system_data = {
 }
 
 # Setup visual assets and render the dashboard
-art = get_weather_art(weather_data["weather"])
-color = get_weather_color(weather_data["weather"])
+art = get_art()
+color = get_color()
 city_name = os.getenv("WEATHER_CITY_NAME")
 
 render(art, color, weather_data, system_data, city_name)

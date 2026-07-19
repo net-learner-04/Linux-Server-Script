@@ -1,5 +1,27 @@
-import time, psutil, pynvml
-from config import IDLE, LOAD
+import time, os, psutil, pynvml
+from datetime import datetime
+import config
+import hardware
+
+def detect_power_method():
+    """Determine the best available power measurement method for this system."""
+    vendor = hardware.detect_cpu_vendor()
+    gpu_available = hardware.check_gpu()
+
+    if vendor == "intel" and hardware.check_rapl():
+        base_method = "rapl"
+    else:
+        base_method = "estimated"
+
+    if gpu_available:
+        return base_method + "_plus_gpu"
+    else:
+        return base_method
+
+
+def get_uptime():
+    """Return system uptime in seconds since boot."""
+    return float(datetime.now().timestamp() - psutil.boot_time())
 
 
 def get_rapl_power():
@@ -46,7 +68,7 @@ def get_gpu_power():
 def get_estimated_power():
     """Estimate instantaneous power (W) by interpolating between IDLE and LOAD based on CPU usage."""
     cpu_percent = psutil.cpu_percent(interval=1)
-    return IDLE + (LOAD - IDLE) * (cpu_percent / 100)
+    return config.IDLE + (config.LOAD - config.IDLE) * (cpu_percent / 100)
 
 
 def get_instant_power(method):
@@ -60,3 +82,11 @@ def get_instant_power(method):
         return get_estimated_power()
     elif method == "estimated_plus_gpu":
         return get_estimated_power() + get_gpu_power()
+
+
+def calculate_cost(total_wh):
+    """Convert total watt-hours into kWh and estimated cost based on RATE_PER_KWH."""
+    total_kwh = total_wh / 1000
+    cost = total_kwh * config.RATE_PER_KWH
+
+    return total_kwh, cost

@@ -100,29 +100,29 @@ def build_system_text(system_data):
 
 
 def render(art, color, weather_data, system_data, city_name):
-    """Arranges the ASCII art and weather/system info blocks into 3 columns
-    and prints them to the console."""
+    """Arranges the ASCII art on top and positions weather/system info 
+    blocks into 2 columns directly underneath."""
     print("\n")
+    
     art_text = Text(art.strip("\n"), style=color)
+    console.print(art_text)
+    print("\n")
 
     weather_block = build_weather_text(
         weather_data,
         city_name,
         system_data.get("uptime")
     )
-
     system_block = build_system_text(system_data)
 
-    layout = Table.grid(padding=(0, 4), expand=False)
-    layout.add_column()
-    layout.add_column()
-    layout.add_column()
+    bottom_layout = Table.grid(padding=(0, 8), expand=False)
+    bottom_layout.add_column()
+    bottom_layout.add_column()
 
-    layout.add_row(
-        art_text,
+    bottom_layout.add_row(
         weather_block,
         system_block
     )
 
-    console.print(layout)
+    console.print(bottom_layout)
     print("\n")

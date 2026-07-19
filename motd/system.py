@@ -1,4 +1,5 @@
-import psutil, subprocess as sub
+import os, psutil
+import subprocess as sub
 
 
 def time_calculate(sec):
@@ -40,6 +41,11 @@ def get_dev_info():
 def get_update_number():
     '''Checks the number of pending package updates via 
     dnf check-update and returns a status string.'''
+    # Bypass the heavy DNF check if the script is not running with root privileges (EUID 0).
+    # This prevents command delays caused by permission boundaries for non-root users.
+    if os.geteuid() != 0:
+        return None
+
     try:
         result = sub.run(
             ["dnf", "check-update", "-q"],

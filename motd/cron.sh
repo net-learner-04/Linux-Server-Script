@@ -29,7 +29,7 @@ then
     exit 1
 fi
 
-CRON_JOB="*/0 * * * * cd $SCRIPT_DIR && /usr/bin/python3 weather.py"
+CRON_JOB="0 * * * * cd $SCRIPT_DIR && /usr/bin/python3 weather.py"
 
 # Command to Prevent Duplicate Registrations.
 (

@@ -1,23 +1,17 @@
-from hardware import detect_power_method
-from logger import create_daily_log_file, write_log
-from parser import (
-    parse_logs,
-    calculate_cost,
-    is_last_day_of_month,
-)
-from discord import send_to_discord
-
+import power
+import logger
+import parser
+import discord
 
 def start():
-    method = detect_power_method()
+    method = power.detect_power_method()
+    log_path = logger.create_daily_log_file()
+    logger.write_log(log_path, method)
 
-    log_path = create_daily_log_file()
-    write_log(log_path, method)
-
-    if is_last_day_of_month():
-        total_uptime, total_wh = parse_logs()
-        total_kwh, cost = calculate_cost(total_wh)
-        send_to_discord(total_uptime, total_kwh, cost)
+    if parser.is_last_day_of_month():
+        total_uptime, total_wh = parser.parse_logs()
+        total_kwh, cost = power.calculate_cost(total_wh)
+        discord.send_to_discord(total_uptime, total_kwh, cost)
 
 
 if __name__ == "__main__":

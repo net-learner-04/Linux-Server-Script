@@ -2,7 +2,6 @@
 import calendar
 import csv
 from datetime import datetime, date
-
 from config import DIR_PATH, RATE_PER_KWH
 
 

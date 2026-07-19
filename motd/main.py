@@ -1,4 +1,4 @@
-import os, csv
+import os, csv, dotenv
 from pathlib import Path
 from display import render
 from ascii_art import get_art, get_color

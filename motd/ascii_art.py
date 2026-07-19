@@ -29,9 +29,9 @@ COLORS = [
 ]
 
 
-def get_art(owm_main):
+def get_art():
     return art
 
 
-def get_color(owm_main):
+def get_color():
     return random.choice(COLORS)

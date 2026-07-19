@@ -1,13 +1,10 @@
-# Built-in Python Modules
-import calendar
-import csv
+import csv, calendar
 from datetime import datetime, date
-from config import DIR_PATH, RATE_PER_KWH
-
+import config
 
 def parse_logs():
     """Aggregate this month's logs into total uptime (s) and total energy consumption (Wh)."""
-    csv_files = DIR_PATH.glob("*.csv")
+    csv_files = config.DIR_PATH.glob("*.csv")
     total_uptime = 0.0
     total_wh = 0.0
     today = date.today()
@@ -23,7 +20,6 @@ def parse_logs():
 
         with open(file_path, mode="r", encoding="utf-8") as f:
             reader = csv.reader(f)
-
             # Header Skip
             next(reader)
 
@@ -46,14 +42,6 @@ def parse_logs():
                 prev_ts = ts
 
     return total_uptime, total_wh
-
-
-def calculate_cost(total_wh):
-    """Convert total watt-hours into kWh and estimated cost based on RATE_PER_KWH."""
-    total_kwh = total_wh / 1000
-    cost = total_kwh * RATE_PER_KWH
-
-    return total_kwh, cost
 
 
 def is_last_day_of_month():

@@ -4,6 +4,10 @@ from display import render
 from ascii_art import get_art, get_color
 from system import get_uptime, get_dev_info, get_update_number, get_last_login
 
+
+# Load environment variables from the .env file
+dotenv.load_dotenv(Path(__file__).parent / ".env")
+
 # Path to the cached weather log file
 LOG_FILE = Path(__file__).parent / "log" / "weather_log.csv"
 

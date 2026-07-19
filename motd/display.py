@@ -1,8 +1,7 @@
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
-import re
-import time
+import re, time
 
 console = Console()
 
@@ -106,7 +105,6 @@ def render(art, color, weather_data, system_data, city_name):
     
     art_text = Text(art.strip("\n"), style=color)
     console.print(art_text)
-    print("\n")
 
     weather_block = build_weather_text(
         weather_data,

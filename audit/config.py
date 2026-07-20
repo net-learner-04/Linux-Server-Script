@@ -6,6 +6,9 @@ INTERVAL = 10
 # Discord's hard limit is 2000 chars per message; keep some margin.
 DISCORD_LIMIT = 1900
 
+# Discord embed description limit (leave margin under the hard 4096 cap).
+DISCORD_EMBED_LIMIT = 4000
+
 # Keywords used to filter EXECVE command lines that are actually worth reporting.
 # Matched against the binary/interpreter name (no options) so variants like
 # python3, python3.11, /usr/bin/python are all caught by "python".

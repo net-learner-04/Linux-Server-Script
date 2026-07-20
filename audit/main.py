@@ -38,7 +38,7 @@ def flush(force=False):
     msg = "\n".join(MESSAGE_QUEUE)
     MESSAGE_QUEUE.clear()
 
-    send_discord_server(WEBHOOK, msg)
+    send_discord_server(WEBHOOK, msg, title="Suspicious EXEC Report", level="warning")
     LAST_SENT = now
 
 
@@ -69,15 +69,17 @@ def start():
                     exe_path = parsed_data.get("exe", "Unknown")
                     uid_val = parsed_data.get("uid", "Unknown")
 
-                    alert_msg = (
-                        f"    ALERT Sensitive file access detected\n"
-                        f"    Target: /etc/passwd\n"
-                        f"    Program: {exe_path}\n"
-                        f"    UID: {uid_val}\n"
-                        f"    Event ID: {msg_id}"
+                    send_discord_server(
+                        WEBHOOK,
+                        title="Sensitive File Access Detected",
+                        level="error",
+                        fields=[
+                            {"name": "Target", "value": "/etc/passwd", "inline": True},
+                            {"name": "Program", "value": exe_path, "inline": True},
+                            {"name": "UID", "value": str(uid_val), "inline": True},
+                            {"name": "Event ID", "value": str(msg_id), "inline": False},
+                        ],
                     )
-
-                    send_discord_server(WEBHOOK, alert_msg)
 
                 elif log_key == EXEC_KEY:
                     buffer[msg_id] = {

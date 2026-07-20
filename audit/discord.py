@@ -1,5 +1,6 @@
 import json, time, urllib.request, urllib.error
 from datetime import datetime, timezone
+from typing import Optional, List, Dict
 import config
 
 DISCORD_EMBED_DESC_LIMIT = 4096  # Discord embed description max length
@@ -16,7 +17,7 @@ def send_discord_server(
     message: str = "",
     title: str = "Notification",
     level: str = "info",
-    fields: list[dict] | None = None,
+    fields: Optional[List[Dict]] = None,
 ) -> bool:
     '''Send a message to a Discord webhook for alerting or reporting events, using embeds.
 

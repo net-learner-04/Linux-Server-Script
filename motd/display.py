@@ -1,11 +1,36 @@
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
-import re, time
+import re, time, random, pyfiglet, os, pwd
 
 console = Console()
 
 
+def get_ascii_art_color():
+    color_list = [
+    "#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE1FF",
+    "#D7BAFF", "#E0BBE4", "#FEC8D8", "#FFDAC1", "#B5EAD7",
+    "#C7CEEA", "#CDE7BE", "#F6DFEB", "#FBE7C6", "#A0E7E5",
+    "#B4F8C8", "#D4F0F0", "#F9F7CF", "#E2F0CB", "#D0F4DE",
+    "#F8C8DC", "#C9E4DE", "#D6EADF", "#E4C1F9", "#A9DEF9",
+    "#FCF6BD", "#FFD6A5", "#FDFFB6", "#CAFFBF", "#9BF6FF"
+    ]
+    
+    return random.choice(color_list)
+
+
+def get_ascii_art():
+    font_list = [
+    "slant", "standard", "ogre",
+    "small", "mini", "digital",
+    "letters", "cyberlarge", "cybermedium",
+    ]
+    
+    username = pwd.getpwuid(os.getuid()).pw_name
+    
+    return pyfiglet.figlet_format(username, font=random.choice(font_list))
+    
+    
 def colorize_usage(value):
     """Determines a warning color (red/yellow/green)
     based on a usage percentage value."""

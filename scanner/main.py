@@ -11,13 +11,6 @@ SERVER_MAC = os.getenv("SERVER_MAC")
 LOCK_FILE = os.getenv("LOCK_FILE")
 
 
-def root_check():
-    '''A function to check if the program is running with root privileges'''
-    if os.getuid() != 0:
-        print("Run as root.")
-        sys.exit(os.EX_NOPERM)
-
-
 def acquire_lock():
     '''Create a lock file to prevent multiple instances 
     from running simultaneously.'''
@@ -85,7 +78,6 @@ async def main():
 
 
 if __name__ == "__main__":
-    root_check()
     acquire_lock()
     try:
         asyncio.run(main())

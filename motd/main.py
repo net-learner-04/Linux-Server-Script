@@ -1,7 +1,6 @@
 import os, dotenv
 from pathlib import Path
-from display import render
-from ascii_art import get_art, get_color
+from display import render, get_ascii_art_color, get_ascii_art()
 from system import get_uptime, get_dev_info, get_update_number, get_last_login
 from weather import get_weather
 
@@ -37,7 +36,7 @@ system_data = {
 }
 
 # Setup visual assets and render the dashboard
-art = get_art()
-color = get_color()
+art = get_ascii_art()
+color = get_ascii_art_color()
 city_name = os.getenv("WEATHER_CITY_NAME")
 render(art, color, weather_data, system_data, city_name)

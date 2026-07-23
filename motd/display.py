@@ -162,4 +162,3 @@ def render(art, color, weather_data, system_data, city_name):
     )
 
     console.print(bottom_layout)
-    print("\n")

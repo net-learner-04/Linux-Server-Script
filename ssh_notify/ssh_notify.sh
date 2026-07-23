@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# [!] Must copy or move ssh_notify.sh file's location.
+# Must copy or move ssh_notify.sh file's location.
 # absolute path: /usr/local/bin/ssh_notify.sh
 
 

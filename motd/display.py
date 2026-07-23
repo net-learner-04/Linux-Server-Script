@@ -7,6 +7,7 @@ console = Console()
 
 
 def get_ascii_art_color():
+    '''A function that returns random colors for use in ASCII art.'''
     color_list = [
     "#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE1FF",
     "#D7BAFF", "#E0BBE4", "#FEC8D8", "#FFDAC1", "#B5EAD7",
@@ -20,6 +21,7 @@ def get_ascii_art_color():
 
 
 def get_ascii_art():
+    '''A function that returns the name of the currently logged-in user account as ASCII art.'''
     font_list = [
     "slant", "standard", "ogre",
     "small", "mini", "digital",

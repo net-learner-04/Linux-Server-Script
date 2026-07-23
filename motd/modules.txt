@@ -1,4 +1,0 @@
-psutil
-python-dotenv
-rich
-pyfiglet

@@ -1,6 +1,6 @@
 import os, dotenv
 from pathlib import Path
-from display import render, get_ascii_art_color, get_ascii_art()
+from display import render, get_ascii_art_color, get_ascii_art
 from system import get_uptime, get_dev_info, get_update_number, get_last_login
 from weather import get_weather
 

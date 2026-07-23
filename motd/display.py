@@ -23,9 +23,23 @@ def get_ascii_art_color():
 def get_ascii_art():
     '''A function that returns the name of the currently logged-in user account as ASCII art.'''
     font_list = [
-    "slant", "standard", "ogre",
-    "small", "mini", "digital",
-    "letters", "cyberlarge", "cybermedium",
+    "slant", "standard", "small",
+    "mini", "digital", "letters",
+    "cyberlarge", "cybermedium", "ogre",
+    "rectangles", "caligraphy", "puffy",
+    "shadow", "speed", "swan",
+    "bubble", "chunky", "cooper",
+    "epic", "fraktur", "fuzzy",
+    "gothic", "isometric1", "italic",
+    "katakana", "kontur", "larry3d",
+    "lean", "lineblocks", "mnemonic",
+    "pebble", "pepper", "poison",
+    "rectangles", "relief", "relief2",
+    "roman", "script", "serifcap",
+    "shimrod", "short", "slant_relief",
+    "slide", "soft", "starwars",
+    "stresi", "sub-zero", "swirling",
+    "twisted", "varsity", "wavy"
     ]
     
     username = pwd.getpwuid(os.getuid()).pw_name
@@ -128,11 +142,8 @@ def build_system_text(system_data):
 def render(art, color, weather_data, system_data, city_name):
     """Arranges the ASCII art on top and positions weather/system info 
     blocks into 2 columns directly underneath."""
-    print("\n")
-    
     art_text = Text(art.strip("\n"), style=color)
     console.print(art_text)
-    print("\n")
 
     weather_block = build_weather_text(
         weather_data,

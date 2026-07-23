@@ -16,7 +16,7 @@ MOTD_PATH="/opt/motd-dashboard"
 mkdir -p "$MOTD_PATH"
 
 # Copy project files and env config to the deployment directory
-cp -f main.py weather.py system.py ascii_art.py display.py .env "$MOTD_PATH"
+cp -f main.py weather.py system.py display.py .env "$MOTD_PATH"
 
 # Restrict .env permissions since it contains the API key
 chmod 600 "$MOTD_PATH/.env"
@@ -47,7 +47,7 @@ chmod 750 "$MOTD_PATH"
 python3 -m venv "$MOTD_PATH"/venv
 
 # Install required Python packages into the virtual environment
-"$MOTD_PATH/venv/bin/pip" install rich requests python-dotenv psutil
+"$MOTD_PATH/venv/bin/pip" install rich requests python-dotenv psutil pyfiglet
 
 # Create a login-shell hook that runs main.py on every SSH/local login
 cat <<EOF > /etc/profile.d/motd.sh

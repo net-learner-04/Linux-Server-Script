@@ -22,25 +22,8 @@ def get_ascii_art_color():
 
 def get_ascii_art():
     '''A function that returns the name of the currently logged-in user account as ASCII art.'''
-    font_list = [
-    "slant", "standard", "small",
-    "mini", "digital", "letters",
-    "cyberlarge", "cybermedium", "ogre",
-    "rectangles", "caligraphy", "puffy",
-    "shadow", "speed", "swan",
-    "bubble", "chunky", "cooper",
-    "epic", "fraktur", "fuzzy",
-    "gothic", "isometric1", "italic",
-    "katakana", "kontur", "larry3d",
-    "lean", "lineblocks", "mnemonic",
-    "pebble", "pepper", "poison",
-    "rectangles", "relief", "relief2",
-    "roman", "script", "serifcap",
-    "shimrod", "short", "slant_relief",
-    "slide", "soft", "starwars",
-    "stresi", "sub-zero", "swirling",
-    "twisted", "varsity", "wavy"
-    ]
+    font_list = ["soft", "varsity", 
+    "letters", "cyberlarge", "speed"]
     
     username = pwd.getpwuid(os.getuid()).pw_name
     

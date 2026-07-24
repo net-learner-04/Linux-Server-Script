@@ -7,22 +7,10 @@ PACKAGES_LIST=(
     "curl" "wget" "tar" "unzip" "policycoreutils-python-utils"
     "smartmontools" "fail2ban" "net-tools" "nmap" "tcpdump" 
     "traceroute" "bind-utils" "iperf3" "socat" "sysstat" "iotop"
-    "lsof" "strace" "rsync" "pciutils"
+    "lsof" "strace" "rsync" "pciutils" 
 )
 
-SCRIPT_DIR=$(dirname "$(realpath "$0")")
-
-ROOT=$EUID
-
-OS_ID=$(awk -F'=' '$1=="ID" {print $2}' /etc/os-release | tr -d '"')
-
-# OS_VER=$(awk -F'=' '$1=="VERSION_ID" {print $2}' /etc/os-release | tr -d '"')
-
-GOOGLE_IP="8.8.8.8"
-
-SSH_CONF="/etc/ssh/sshd_config"
-
-RAND_NUMBER=$(shuf -i 1024-65535 -n 1)
+# SCRIPT_DIR=$(dirname "$(realpath "$0")")
 
 
 if [ -f "./setup_done" ]
@@ -36,38 +24,44 @@ then
 fi
 
 
-if [ "$EUID" != "0" ]
+if [ "$EUID" -ne 0 ] || [ -n "$SUDO_USER" ]
 then
-    echo not root
+    echo "You must log in directly as the root user."
     exit 1
 fi
 
-if [ "$OS_ID" != "rocky" ]
+OS_NAME=$(awk -F'=' '$1=="ID" {print $2}' /etc/os-release | tr -d '"')
+
+if [ "$OS_NAME" != "rocky" ]
 then
-    echo Not Rocky Linux.
+    echo "Cannot run because the operating system is not Rocky Linux."
     exit 1
 fi
 
 
-if ping -c 1 -w 1 "$GOOGLE_IP" &> /dev/null
+if ping -c 1 -w 1 8.8.8.8 &> /dev/null
 then
-    echo Internet connection is working properly.
+    echo "Internet connection is working properly."
 else
-    echo Check Your Network Connection.
+    echo "Check Your Network Connection."
     exit 1
 fi
 
 
 echo "Set the hostname."
 
-read -r -p "Enter the hostname: " hostname
+read -r -p "Enter the hostname (You can skip by pressing Enter.): " hostname
 
 if [ -z "$hostname" ]
 then
     echo "Hostname is empty. skipping."
 else
-    hostnamectl set-hostname "$hostname"
-    echo "Hostname set to $hostname"
+    if hostnamectl set-hostname "$hostname"
+    then
+        echo "Hostname set to $hostname"
+    else
+        echo "Failed to set hostname."
+    fi
 fi
 
 
@@ -75,26 +69,23 @@ echo "set the timezone."
 
 timedatectl set-timezone Asia/Seoul
 
+
 echo "set the locale."
 
 localectl set-locale LANG=en_US.UTF-8
 
-read -r -p "If you want dnf update? (y/n): " answer
 
-if [ "$answer" = "y" ]
+read -r -p "Would you like to enable additional software package \
+repositories for your Linux distribution? (y/n): " epel_answer
+
+if [ "$epel_answer" == "y" ]
 then
-    echo "Start dnf update."
+    echo "Enable the EPEL repository."
+    dnf install epel-release -y
+    dnf update -y
+else
     dnf update -y
 fi
-
-
-echo "Enable the EPEL repository."
-
-# You can easily install useful utilities not found
-# in the default repository using the dnf (yum) command.
-dnf install epel-release -y
-
-dnf update -y
 
 
 ERROR_PACKAGES_LIST=()
@@ -112,6 +103,7 @@ do
     
 done
 
+
 if [ "${#ERROR_PACKAGES_LIST[@]}" -gt 0 ]
 then
     read -r -p "There is a failed package. Would you like to reinstall it? (y/n): " answer
@@ -128,6 +120,7 @@ then
     fi
 fi
 
+
 if [ "${#SECOND_ERROR_PACKAGES_LIST[@]}" -gt 0 ]
 then
     echo "Final failed packages:"
@@ -139,16 +132,28 @@ then
 fi
 
 
-echo "Create a user."
+echo "Create a Linux account."
 
-read -r -p "Please enter your username: " username
+read -r -p "Enter the name you want to use as your user account name: " username
 
 useradd -m -d /home/"$username" "$username"
 
+if id "$username" &>/dev/null
+then
+    echo "User already exists."
+    exit 1
+fi
 
-echo "Set a password for your user account."
+
+echo "Set a password for your Linux account."
 
 passwd "$username"
+
+if ! passwd "$username"
+then
+    echo "Password setup failed."
+    exit 1
+fi
 
 passwd -w 5 -n 3 -x 31 "$username"
 
@@ -158,12 +163,9 @@ echo "Grant 'sudo' privileges."
 usermod -aG wheel "$username"
 
 
-echo "Verify your newly created user account."
-
-su - "$username" -c "sudo whoami"
-
-
 echo "Change the SSH remote connection settings."
+
+SSH_CONF="/etc/ssh/sshd_config"
 
 if grep -qwi "#PermitRootLogin no" "$SSH_CONF"
 then
@@ -173,13 +175,19 @@ then
     sed -i '/PermitRootLogin yes/ c\PermitRootLogin no' "$SSH_CONF"
 elif ! grep -qwi "#PermitRootLogin no" "$SSH_CONF" && ! grep -qwi "PermitRootLogin no" "$SSH_CONF"
 then
-cat << 'EOF' >> "$TARGET"
+cat << 'EOF' >> "$SSH_CONF"
 PermitRootLogin no
 EOF
 fi
 
 
 echo "Change the SSH 22 port to a random value."
+
+while :
+do
+    RAND_NUMBER=$(shuf -i 1024-65535 -n 1)
+    ss -tln | grep -q ":$RAND_NUMBER " || break
+done
 
 if grep -qwi "#Port 22" "$SSH_CONF"
 then
@@ -213,38 +221,164 @@ echo "Restart the sshd service."
 systemctl restart sshd
 
 
-echo "=========================================================="
-echo "Registering a Public Key on a Client PC (Not the Server)."
-echo "=========================================================="
-echo "1. Open a new terminal on your CLIENT PC (Windows/Mac/Linux)."
-echo "2. Run the following command to copy your public key to the server:"
-echo "   ssh-copy-id -p $RAND_NUMBER [$username]@[SERVER_IP]"
-echo "3. Enter the user's password when prompted."
-echo "4. Verify you can log in without a password: ssh -p [NEW_PORT] [$username]@[SERVER_IP]"
-echo "=========================================================="
+read -r -p "Would you like to set a bootloader password? (y/n): " boot_answer
 
+GRUB_CONF="/boot/efi/EFI/rocky/grub.cfg"
 
-read -r -p "Have you successfully registered and verified your public key? (y/n): " CONFIRM1
-
-if [ "$CONFIRM1" = "y" ]
+if [ "$boot_answer" == 'y' ]
 then
-    read -r -p "Did you actually verify that the connection using the public key was successful? (y/n): " CONFIRM2
+    echo "Set the bootloader password."
+    GRUB_HASH_PASSWD=$(grub2-mkpasswd-pbkdf2 | awk '/grub.pbkdf2/ {print $NF}')
     
-    if [ "$CONFIRM2" = "y" ]
-    then
-        if grep -qwi "#PasswordAuthentication no" "$TARGET"
-        then
-            sed -i '/#PasswordAuthentication no/s/^[[:space:]]*#[[:space:]]*//' "$TARGET"
-        elif grep -qwi "PasswordAuthentication yes" "$TARGET"
-        then
-            sed -i '/PasswordAuthentication yes/ c\PasswordAuthentication no' "$TARGET"
-        elif ! grep -qwi "#PasswordAuthentication no" "$TARGET" && ! grep -qwi "PasswordAuthentication no" "$TARGET"
-        then
-        cat << 'EOF' >> "$TARGET"
-PasswordAuthentication no
+    cat << EOF >> "$GRUB_CONF"
+password --encrypted "$GRUB_HASH_PASSWD"
 EOF
-        fi
-        echo "Restart the sshd service."
-        systemctl restart sshd
-    fi
+else
+    echo "Skip bootloader password."
 fi
+
+
+read -r -p "Apply recommended kernel/network security hardening (sysctl)? (y/n): " sysctl_answer
+
+if [ "$sysctl_answer" == 'y' ]
+then
+    echo "Apply sysctl hardening settings."
+    
+    read -r -p "Do you want to change the local port range? (y/n): " port_change_answer
+    
+    if [ "$port_change_answer" == 'y' ]
+    then
+        read -r -p "Local port range (default: 32768 60999): " PORT_RANGE
+        PORT_RANGE=${PORT_RANGE:-"32768 60999"}
+    fi
+
+    SYSCTL_CONF="/etc/sysctl.d/99-hardening.conf"
+ 
+    cat << EOF > "$SYSCTL_CONF"
+# Disable TCP timestamps (prevents remote uptime fingerprinting, etc.)
+net.ipv4.tcp_timestamps = 0
+
+# Enable SYN cookies to defend against SYN flood attacks
+net.ipv4.tcp_syncookies = 1
+
+# Ignore all ICMP echo (ping) requests
+net.ipv4.icmp_echo_ignore_all = 1
+
+# Ignore ICMP requests sent to broadcast addresses (prevents Smurf attacks)
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+
+# Timeout (seconds) for sockets in FIN-WAIT state - frees up resources faster
+net.ipv4.tcp_fin_timeout = 30
+
+# Idle time (seconds) before sending the first TCP keepalive probe
+net.ipv4.tcp_keepalive_time = 600
+
+# Range of local ports available for outgoing connections (adjust per environment)
+net.ipv4.ip_local_port_range = $PORT_RANGE
+
+# Disable packet forwarding unless this host is a router
+net.ipv4.ip_forward = 0
+EOF
+    sysctl --system
+else
+    echo "Skip sysctl hardening."
+fi
+
+
+SE_STATUS=$(sestatus | grep "Current mode" | awk '{print $NF}')
+
+if [ "$SE_STATUS" != "enforcing" ]
+then
+    echo "Change SELinux's enforcement mode to 'enforce'."
+    setenforce enforcing
+    sed -i 's/^SELINUX=.*/SELINUX=enforcing/' /etc/selinux/config
+fi
+
+
+clear
+
+SUMMARY="./summary.txt"
+
+{
+echo "========== Setup Summary =========="
+echo
+
+echo "Hostname"
+echo "  $hostname"
+echo
+
+echo "User"
+echo "  $username"
+echo
+
+echo "Timezone"
+echo "  $(timedatectl show --property=Timezone --value)"
+echo
+
+echo "Locale"
+echo "  $(localectl status | grep "System Locale")"
+echo
+
+echo "SSH Port"
+echo "  $RAND_NUMBER"
+echo
+
+echo "SELinux"
+echo "  $(getenforce)"
+echo
+
+echo "EPEL"
+if [ "$epel_answer" = "y" ]
+then
+    echo "  Enabled"
+else
+    echo "  Disabled"
+fi
+echo
+
+echo "Bootloader Password"
+if [ "$boot_answer" = "y" ]
+then
+    echo "  Configured"
+else
+    echo "  Not Configured"
+fi
+echo
+
+echo "Sysctl Hardening"
+if [ "$sysctl_answer" = "y" ]
+then
+    echo "  Applied"
+    echo "  Local Port Range : $PORT_RANGE"
+else
+    echo "  Not Applied"
+fi
+echo
+
+echo "Installed Packages"
+
+for PKG in "${PACKAGES_LIST[@]}"
+do
+    rpm -q "$PKG" &>/dev/null &&
+        echo "  [OK] $PKG" ||
+        echo "  [FAIL] $PKG"
+done
+
+echo
+
+echo "Failed Packages"
+
+if [ "${#SECOND_ERROR_PACKAGES_LIST[@]}" -eq 0 ]
+then
+    echo "  None"
+else
+    for PKG in "${SECOND_ERROR_PACKAGES_LIST[@]}"
+    do
+        echo "  $PKG"
+    done
+fi
+
+echo
+echo "=================================="
+
+} | tee "$SUMMARY"

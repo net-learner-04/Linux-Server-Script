@@ -37,8 +37,8 @@ def colorize_usage(value):
 
 
 def build_info_panel(weather_data, system_data, city_name):
-    """Builds a single bordered table containing all info rows
-    (weather + system) in 'label / value' format, like the reference photo."""
+    """Builds a single bordered table containing all info rows,
+    split into 3 sections: weather / device+resource / login."""
 
     table = Table(
         box=box.ROUNDED,
@@ -69,11 +69,21 @@ def build_info_panel(weather_data, system_data, city_name):
 
     table.add_section()
 
+    kernel = system_data.get("kernel")
+    os_name = system_data.get("os_name")
+    hostname = system_data.get("hostname")
+
+    if hostname:
+        table.add_row("Hostname", hostname)
+    if os_name:
+        table.add_row("OS", os_name)
+    if kernel:
+        table.add_row("Kernel", kernel)
+
     cpu = system_data.get("cpu")
     memory = system_data.get("memory")
     disk = system_data.get("disk")
     update_status = system_data.get("update_status") or ""
-    last_login = system_data.get("last_login") or ""
 
     if cpu is not None:
         table.add_row("CPU", Text(f"{cpu}%", style=colorize_usage(cpu)))
@@ -86,6 +96,9 @@ def build_info_panel(weather_data, system_data, city_name):
         style = "dim" if "up to date" in update_status else "bold yellow"
         table.add_row("Updates", Text(update_status.replace("Update: ", ""), style=style))
 
+    table.add_section()
+-
+    last_login = system_data.get("last_login") or ""
     if last_login:
         cleaned_login = last_login.replace("Last login: ", "")
         match = re.match(

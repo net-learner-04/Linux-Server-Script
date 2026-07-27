@@ -1,6 +1,7 @@
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
+from rich import box
 import re, time, random, pyfiglet, os, pwd
 
 console = Console()
@@ -16,23 +17,18 @@ def get_ascii_art_color():
     "#F8C8DC", "#C9E4DE", "#D6EADF", "#E4C1F9", "#A9DEF9",
     "#FCF6BD", "#FFD6A5", "#FDFFB6", "#CAFFBF", "#9BF6FF"
     ]
-    
     return random.choice(color_list)
 
 
 def get_ascii_art():
     '''A function that returns the name of the currently logged-in user account as ASCII art.'''
-    font_list = ["soft", "varsity", 
-    "letters", "cyberlarge", "speed"]
-    
+    font_list = ["soft", "varsity", "letters", "cyberlarge", "speed"]
     username = pwd.getpwuid(os.getuid()).pw_name
-    
     return pyfiglet.figlet_format(username, font=random.choice(font_list))
-    
-    
+
+
 def colorize_usage(value):
-    """Determines a warning color (red/yellow/green)
-    based on a usage percentage value."""
+    """Determines a warning color (red/yellow/green) based on a usage percentage value."""
     if value >= 80:
         return "bold red"
     elif value >= 60:
@@ -40,70 +36,55 @@ def colorize_usage(value):
     return "bold green"
 
 
-def build_weather_text(weather_data, city_name, uptime):
-    """Builds a Rich Table block displaying weather information."""
-    weather = weather_data.get("weather") or "Unknown"
+def build_info_panel(weather_data, system_data, city_name):
+    """Builds a single bordered table containing all info rows
+    (weather + system) in 'label / value' format, like the reference photo."""
+
+    table = Table(
+        box=box.ROUNDED,
+        show_header=False,
+        show_edge=True,
+        pad_edge=True,
+        padding=(0, 1),
+        expand=False,
+    )
+    table.add_column(justify="left")
+    table.add_column(justify="right")
+
+    formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    table.add_row("Time", formatted_time)
+    table.add_row("Uptime", system_data.get("uptime") or "N/A")
+    table.add_row("City", city_name or "N/A")
+    table.add_row("Weather", weather_data.get("weather") or "Unknown")
+
     temp = weather_data.get("temp")
     feels_like = weather_data.get("feels_like")
-    humidity = weather_data.get("humidity")
-
-    table = Table.grid(padding=(0, 1))
-    table.add_column(justify="left")
-    table.add_column(justify="left")
-
-    formatted = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-
-    table.add_row("[bold]Time:[/bold]", formatted)
-    table.add_row("[bold]Uptime:[/bold]", uptime or "N/A")
-    table.add_row("[bold]City:[/bold]", city_name)
-    table.add_row("[bold]Weather:[/bold]", weather)
-
     if temp is not None and feels_like is not None:
-        table.add_row(
-            "[bold]Temp:[/bold]",
-            f"{temp}°C (feels like {feels_like}°C)"
-        )
+        table.add_row("Temp", f"{temp}°C (feels {feels_like}°C)")
     else:
-        table.add_row("[bold]Temp:[/bold]", "N/A")
+        table.add_row("Temp", "N/A")
 
-    if humidity is not None:
-        table.add_row("[bold]Humidity:[/bold]", f"{humidity}%")
-    else:
-        table.add_row("[bold]Humidity:[/bold]", "N/A")
+    humidity = weather_data.get("humidity")
+    table.add_row("Humidity", f"{humidity}%" if humidity is not None else "N/A")
 
-    return table
+    table.add_section()
 
-
-def build_system_text(system_data):
-    """Builds a Rich Table block displaying server status information."""
     cpu = system_data.get("cpu")
     memory = system_data.get("memory")
     disk = system_data.get("disk")
     update_status = system_data.get("update_status") or ""
     last_login = system_data.get("last_login") or ""
 
-    table = Table.grid(padding=(0, 1))
-    table.add_column(justify="left")
-    table.add_column(justify="left")
-
     if cpu is not None:
-        style = colorize_usage(cpu)
-        table.add_row("[bold]CPU:[/bold]", Text(f"{cpu}%", style=style))
-
+        table.add_row("CPU", Text(f"{cpu}%", style=colorize_usage(cpu)))
     if memory is not None:
-        style = colorize_usage(memory)
-        table.add_row("[bold]Memory:[/bold]", Text(f"{memory}%", style=style))
-
+        table.add_row("Memory", Text(f"{memory}%", style=colorize_usage(memory)))
     if disk is not None:
-        style = colorize_usage(disk)
-        table.add_row("[bold]Disk:[/bold]", Text(f"{disk}%", style=style))
+        table.add_row("Disk", Text(f"{disk}%", style=colorize_usage(disk)))
 
     if update_status:
         style = "dim" if "up to date" in update_status else "bold yellow"
-        table.add_row(
-            "[bold]Updates:[/bold]",
-            Text(update_status.replace("Update: ", ""), style=style)
-        )
+        table.add_row("Updates", Text(update_status.replace("Update: ", ""), style=style))
 
     if last_login:
         cleaned_login = last_login.replace("Last login: ", "")
@@ -111,37 +92,21 @@ def build_system_text(system_data):
             r"^(?P<time>.+?)\s*\((?P<user>[^:]+):\s*(?P<ip>[^)]+)\)$",
             cleaned_login
         )
-
         if match:
-            table.add_row("[bold]Last Login:[/bold]", match.group("time"))
-            table.add_row("[bold]User:[/bold]", match.group("user"))
-            table.add_row("[bold]From:[/bold]", match.group("ip"))
+            table.add_row("Last Login", match.group("time"))
+            table.add_row("User", match.group("user"))
+            table.add_row("From", match.group("ip"))
         else:
-            table.add_row("[bold]Last Login:[/bold]", cleaned_login)
+            table.add_row("Last Login", cleaned_login)
 
     return table
 
 
 def render(art, color, weather_data, system_data, city_name):
-    """Arranges the ASCII art on top and positions weather/system info 
-    blocks into 2 columns directly underneath."""
+    """Renders ASCII art on top, and a single bordered info box
+    (weather + system merged) directly underneath."""
     art_text = Text(art.strip("\n"), style=color)
     console.print(art_text)
 
-    weather_block = build_weather_text(
-        weather_data,
-        city_name,
-        system_data.get("uptime")
-    )
-    system_block = build_system_text(system_data)
-
-    bottom_layout = Table.grid(padding=(0, 8), expand=False)
-    bottom_layout.add_column()
-    bottom_layout.add_column()
-
-    bottom_layout.add_row(
-        weather_block,
-        system_block
-    )
-
-    console.print(bottom_layout)
+    info_panel = build_info_panel(weather_data, system_data, city_name)
+    console.print(info_panel)

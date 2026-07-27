@@ -29,13 +29,12 @@ uptime, _ = get_uptime()
 cpu, memory, disk = get_dev_info()
 update_status = get_update_number()
 last_login = get_last_login()
-kernel, os_name, hostname, username = get_device_info()
+kernel, hostname, username = get_device_info()
 
 system_data = {
     "uptime": uptime, "cpu": cpu, "memory": memory, "disk": disk,
     "update_status": update_status, "last_login": last_login,
-    "kernel": kernel, "os_name": os_name, "hostname": hostname,
-    "username": username,
+    "kernel": kernel, "hostname": hostname, "username": username
 }
 
 # Setup visual assets and render the dashboard

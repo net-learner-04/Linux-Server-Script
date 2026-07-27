@@ -107,16 +107,6 @@ def get_device_info():
         kernel = "Unknown"
 
     try:
-        with open("/etc/os-release", mode="r") as file:
-            for line in file:
-                if line.startswith("PRETTY_NAME="):
-                    os_name = line.strip().split("=", 1)[1].strip('"')
-                    break
-    except Exception as e:
-        print(f"Failed to get OS name: {e}")
-        os_name = "Unknown"
-
-    try:
         hostname = socket.gethostname()
     except Exception as e:
         print(f"Failed to get hostname: {e}")
@@ -128,4 +118,4 @@ def get_device_info():
         print(f"Failed to get username: {e}")
         username = "Unknown"
     
-    return kernel, os_name, hostname, username
+    return kernel, hostname, username

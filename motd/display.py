@@ -22,7 +22,7 @@ def get_ascii_art_color():
 
 def get_ascii_art():
     '''A function that returns the name of the currently logged-in user account as ASCII art.'''
-    font_list = ["soft", "varsity", "letters", "cyberlarge", "speed"]
+    font_list = ["soft", "varsity"]
     username = pwd.getpwuid(os.getuid()).pw_name
     return pyfiglet.figlet_format(username, font=random.choice(font_list))
 

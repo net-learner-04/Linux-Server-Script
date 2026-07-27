@@ -102,18 +102,24 @@ def get_device_info():
     '''Returns kernel version, OS/distro name, and hostname.'''
     try:
         kernel = platform.release()
-    except Exception:
+    except Exception as e:
+        print(f"Failed to get kernel: {e}")
         kernel = "Unknown"
 
+    os_name = "Unknown"
     try:
-        os_release = platform.freedesktop_os_release()
-        os_name = os_release.get("PRETTY_NAME", "Unknown")
-    except Exception:
-        os_name = "Unknown"
+        with open("/etc/os-release", mode="r") as file:
+            for line in file:
+                if line.startswith("PRETTY_NAME="):
+                    os_name = line.strip().split("=", 1)[1].strip('"')
+                    break
+    except Exception as e:
+        print(f"Failed to get OS name: {e}")
 
     try:
         hostname = socket.gethostname()
-    except Exception:
+    except Exception as e:
+        print(f"Failed to get hostname: {e}")
         hostname = "Unknown"
 
     return kernel, os_name, hostname

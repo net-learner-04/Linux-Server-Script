@@ -1,4 +1,4 @@
-import os, psutil
+import os, psutil, platform, socket
 import subprocess as sub
 
 
@@ -96,3 +96,24 @@ def get_last_login():
     except Exception as e:
         print(f"Command-Line Argument Error: {e}")
         return ""
+
+
+def get_device_info():
+    '''Returns kernel version, OS/distro name, and hostname.'''
+    try:
+        kernel = platform.release()
+    except Exception:
+        kernel = "Unknown"
+
+    try:
+        os_release = platform.freedesktop_os_release()
+        os_name = os_release.get("PRETTY_NAME", "Unknown")
+    except Exception:
+        os_name = "Unknown"
+
+    try:
+        hostname = socket.gethostname()
+    except Exception:
+        hostname = "Unknown"
+
+    return kernel, os_name, hostname

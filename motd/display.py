@@ -92,10 +92,10 @@ def build_info_panel(weather_data, system_data, city_name):
     hostname = system_data.get("hostname")
     username = system_data.get("username")
 
-    if hostname:
-        table.add_row("Hostname", hostname)
     if username:
         table.add_row("Username", username)
+    if hostname:
+        table.add_row("Hostname", hostname)
     if kernel:
         table.add_row("Kernel", kernel)
 

@@ -106,7 +106,6 @@ def get_device_info():
         print(f"Failed to get kernel: {e}")
         kernel = "Unknown"
 
-    os_name = "Unknown"
     try:
         with open("/etc/os-release", mode="r") as file:
             for line in file:
@@ -115,6 +114,7 @@ def get_device_info():
                     break
     except Exception as e:
         print(f"Failed to get OS name: {e}")
+        os_name = "Unknown"
 
     try:
         hostname = socket.gethostname()
@@ -122,4 +122,10 @@ def get_device_info():
         print(f"Failed to get hostname: {e}")
         hostname = "Unknown"
 
-    return kernel, os_name, hostname
+    try:
+        username = pwd.getpwuid(os.getuid()).pw_name
+    except Exception as e:
+        print(f"Failed to get username: {e}")
+        username = "Unknown"
+    
+    return kernel, os_name, hostname, username

@@ -1,4 +1,4 @@
-import os, psutil, platform, socket
+import os, psutil, platform, socket, pwd
 import subprocess as sub
 
 

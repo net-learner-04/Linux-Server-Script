@@ -97,7 +97,7 @@ def build_info_panel(weather_data, system_data, city_name):
         table.add_row("Updates", Text(update_status.replace("Update: ", ""), style=style))
 
     table.add_section()
--
+
     last_login = system_data.get("last_login") or ""
     if last_login:
         cleaned_login = last_login.replace("Last login: ", "")

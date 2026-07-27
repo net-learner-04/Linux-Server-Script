@@ -22,7 +22,7 @@ def get_ascii_art_color():
 
 def get_ascii_art():
     '''A function that returns the name of the currently logged-in user account as ASCII art.'''
-    font_list = ["soft", "varsity"]
+    font_list = ["soft",]
     username = pwd.getpwuid(os.getuid()).pw_name
     return pyfiglet.figlet_format(username, font=random.choice(font_list))
 
@@ -116,10 +116,12 @@ def build_info_panel(weather_data, system_data, city_name):
 
 
 def render(art, color, weather_data, system_data, city_name):
-    """Renders ASCII art on top, and a single bordered info box
-    (weather + system merged) directly underneath."""
+    """Renders ASCII art centered relative to the info panel's width,
+    with the panel directly underneath."""
     art_text = Text(art.strip("\n"), style=color)
-    console.print(art_text)
-
     info_panel = build_info_panel(weather_data, system_data, city_name)
+
+    panel_width = console.measure(info_panel).maximum
+
+    console.print(art_text, justify="center", width=panel_width)
     console.print(info_panel)

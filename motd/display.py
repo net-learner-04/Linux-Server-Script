@@ -21,10 +21,29 @@ def get_ascii_art_color():
 
 
 def get_ascii_art():
-    '''A function that returns the name of the currently logged-in user account as ASCII art.'''
+    '''A function that returns the OS name as ASCII art, split across two lines.'''
     font_list = ["soft",]
-    username = pwd.getpwuid(os.getuid()).pw_name
-    return pyfiglet.figlet_format(username, font=random.choice(font_list))
+
+    try:
+        with open("/etc/os-release", mode="r") as file:
+            for line in file:
+                if line.startswith("PRETTY_NAME="):
+                    os_name = line.strip().split("=", 1)[1].strip('"')
+                    break
+    except Exception as e:
+        print(f"Failed to get OS name: {e}")
+        os_name = "Unknown"
+
+    os_name = re.sub(r"\s*\([^)]*\)", "", os_name).strip()
+
+    parts = os_name.split(" ", 1)
+    if len(parts) == 2:
+        first_line, second_line = parts
+        art_text = f"{first_line}\n    {second_line}"
+    else:
+        art_text = os_name
+
+    return pyfiglet.figlet_format(art_text, font=random.choice(font_list))
 
 
 def colorize_usage(value):
@@ -70,7 +89,6 @@ def build_info_panel(weather_data, system_data, city_name):
     table.add_section()
 
     kernel = system_data.get("kernel")
-    os_name = system_data.get("os_name")
     hostname = system_data.get("hostname")
     username = system_data.get("username")
 
@@ -78,8 +96,6 @@ def build_info_panel(weather_data, system_data, city_name):
         table.add_row("Hostname", hostname)
     if username:
         table.add_row("Username", username)
-    if os_name:
-        table.add_row("OS", os_name)
     if kernel:
         table.add_row("Kernel", kernel)
 

@@ -21,7 +21,7 @@ def get_ascii_art_color():
 
 
 def get_ascii_art():
-    '''A function that returns the OS name as ASCII art, split across two lines.'''
+    '''A function that returns just the OS distro name (e.g. "Rocky", "Ubuntu") as ASCII art.'''
     font_list = ["soft",]
 
     try:
@@ -34,16 +34,9 @@ def get_ascii_art():
         print(f"Failed to get OS name: {e}")
         os_name = "Unknown"
 
-    os_name = re.sub(r"\s*\([^)]*\)", "", os_name).strip()
+    first_word = os_name.split()[0] if os_name.split() else os_name
 
-    parts = os_name.split(" ", 1)
-    if len(parts) == 2:
-        first_line, second_line = parts
-        art_text = f"{first_line}\n    {second_line}"
-    else:
-        art_text = os_name
-
-    return pyfiglet.figlet_format(art_text, font=random.choice(font_list))
+    return pyfiglet.figlet_format(first_word, font=random.choice(font_list))
 
 
 def colorize_usage(value):
@@ -137,10 +130,16 @@ def build_info_panel(weather_data, system_data, city_name):
 def render(art, color, weather_data, system_data, city_name):
     """Renders ASCII art centered relative to the info panel's width,
     with the panel directly underneath."""
-    art_text = Text(art.strip("\n"), style=color)
     info_panel = build_info_panel(weather_data, system_data, city_name)
-
     panel_width = console.measure(info_panel).maximum
 
-    console.print(art_text, justify="center", width=panel_width)
+    art_lines = art.strip("\n").split("\n")
+    art_width = max(len(line) for line in art_lines)
+
+    left_pad = max((panel_width - art_width) // 2, 0)
+    padded_art = "\n".join((" " * left_pad) + line for line in art_lines)
+
+    art_text = Text(padded_art, style=color)
+
+    console.print(art_text)
     console.print(info_panel)

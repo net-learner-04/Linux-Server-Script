@@ -3,9 +3,11 @@
 clear
 
 if [ "$EUID" -ne 0 ]; then
-    echo "Error: Run as root."
+    echo "Run as root."
     exit 1
 fi
+
+USER=${SUDO_USER:-$LOGNAME}
 
 read -r -p "Enter the absolute path of the script to be executed: " FILE_PATH
 
@@ -16,6 +18,19 @@ if [ ! -f "$FILE_PATH" ]; then
 fi
 
 read -r -p "Please enter the name of the program to run the file (example -> python3): " COMMAND_NAME
+
+TMUX_PATH=$(which tmux)
+if [ -z "$TMUX_PATH" ]; then
+    echo "tmux is not installed."
+    exit 1
+fi
+
+if [[ "$COMMAND_NAME" != /* ]]; then
+    RESOLVED_CMD=$(which "$COMMAND_NAME" 2>/dev/null)
+    if [ -n "$RESOLVED_CMD" ]; then
+        COMMAND_NAME="$RESOLVED_CMD"
+    fi
+fi
 
 read -r -p "Enter a tmux session name: " SESSION_NAME
 
@@ -28,7 +43,7 @@ After=network.target
 
 [Service]
 Type=forking
-User=$LOGNAME
+User=$USER
 ExecStart=/usr/bin/tmux new-session -d -s "$SESSION_NAME" "$COMMAND_NAME" "$FILE_PATH"
 ExecStop=/usr/bin/tmux kill-session -t "$SESSION_NAME"
 
@@ -41,3 +56,5 @@ systemctl daemon-reload
 
 echo "The service you created will be applied permanently."
 systemctl enable --now "${SESSION_NAME}.service"
+
+echo "Service registration is complete."

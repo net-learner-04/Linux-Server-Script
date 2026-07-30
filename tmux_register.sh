@@ -1,6 +1,14 @@
 #!/bin/bash
 
+# If you continue to encounter errors even though the parameters you entered are correct, 
+# you need to modify the SELinux label for the tmux binary.
+# [ The command below is used to edit a label. ]
+# sudo semanage fcontext -a -t bin_t /usr/bin/tmux
+# sudo restorecon -v /usr/bin/tmux
+
 clear
+
+echo ""
 
 if [ "$EUID" -ne 0 ]; then
     echo "Run as root."
@@ -19,18 +27,28 @@ fi
 
 read -r -p "Please enter the name of the program to run the file (example -> python3): " COMMAND_NAME
 
-TMUX_PATH=$(which tmux)
+TMUX_PATH=$(which tmux 2>/dev/null)
 
-if [ -z "$TMUX_PATH" ]; then
+if [ -n "$TMUX_PATH" ]; then
+    TMUX_PATH=$(realpath "$TMUX_PATH")
+fi
+
+if [ -z "$TMUX_PATH" ] || [ ! -x "$TMUX_PATH" ]; then
     echo "tmux is not installed."
     exit 1
 fi
 
 if [[ "$COMMAND_NAME" != /* ]]; then
-    RESOLVED_CMD=$(which "$COMMAND_NAME" 2>/dev/null)
-    if [ -n "$RESOLVED_CMD" ]; then
-        COMMAND_NAME="$RESOLVED_CMD"
+    if [ -x "/usr/bin/$COMMAND_NAME" ]; then
+        COMMAND_NAME="/usr/bin/$COMMAND_NAME"
+    else
+        RESOLVED_CMD=$(which "$COMMAND_NAME" 2>/dev/null)
+        if [ -n "$RESOLVED_CMD" ]; then
+            COMMAND_NAME=$(realpath "$RESOLVED_CMD")
+        fi
     fi
+else
+    COMMAND_NAME=$(realpath "$COMMAND_NAME")
 fi
 
 read -r -p "Enter a tmux session name: " SESSION_NAME

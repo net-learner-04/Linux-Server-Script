@@ -7,7 +7,7 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-USER=${SUDO_USER:-$LOGNAME}
+LOGIN_USER=${SUDO_USER:-$LOGNAME}
 
 read -r -p "Enter the absolute path of the script to be executed: " FILE_PATH
 
@@ -20,6 +20,7 @@ fi
 read -r -p "Please enter the name of the program to run the file (example -> python3): " COMMAND_NAME
 
 TMUX_PATH=$(which tmux)
+
 if [ -z "$TMUX_PATH" ]; then
     echo "tmux is not installed."
     exit 1
@@ -43,9 +44,9 @@ After=network.target
 
 [Service]
 Type=forking
-User=$USER
-ExecStart=/usr/bin/tmux new-session -d -s "$SESSION_NAME" "$COMMAND_NAME" "$FILE_PATH"
-ExecStop=/usr/bin/tmux kill-session -t "$SESSION_NAME"
+User=$LOGIN_USER
+ExecStart=$TMUX_PATH new-session -d -s "$SESSION_NAME" "$COMMAND_NAME $FILE_PATH"
+ExecStop=$TMUX_PATH kill-session -t "$SESSION_NAME"
 
 [Install]
 WantedBy=multi-user.target
@@ -57,4 +58,11 @@ systemctl daemon-reload
 echo "The service you created will be applied permanently."
 systemctl enable --now "${SESSION_NAME}.service"
 
-echo "Service registration is complete."
+if [ $? -eq 0 ]; then
+    echo "Service registration is complete."
+    exit 0
+else
+    echo "Service registration failed. The service file you created will be deleted."
+    rm -f "$SYSTEMD_FILE_PATH"
+    exit 1
+fi

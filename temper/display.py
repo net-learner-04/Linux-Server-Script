@@ -14,6 +14,7 @@ def smooth(temps, window=3):
         start = max(0, i - window + 1)
         chunk = temps[start:i + 1]
         result.append(sum(chunk) / len(chunk))
+        
     return result
 
 
@@ -56,7 +57,7 @@ def render(dev_temps):
                   title_justify="center",
                   title_style="bold white",
                   box=box.ROUNDED)
-    table.add_column("Dev_name", justify="right", no_wrap=True)
+    table.add_column("Dev_name", justify="center", no_wrap=True)
     table.add_column("Current_temp", justify="center")
     table.add_column("Graph", justify="center")
 

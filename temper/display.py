@@ -21,7 +21,7 @@ def draw_graph(dev_temps, width=30, min_range=5.0, use_smoothing=True):
     '''Receives a list of temperatures 
     and returns a graph string converted to block bars.'''
     if not dev_temps:
-        return "No data."
+        return " " * width
 
     temps = [temp for _, temp in dev_temps[-width:]]
 
@@ -38,10 +38,15 @@ def draw_graph(dev_temps, width=30, min_range=5.0, use_smoothing=True):
         max_temp = center + min_range / 2
 
     result = ""
+    
     for temp in temps:
         index = round((temp - min_temp) / (max_temp - min_temp) * (len(BLOCKS) - 1))
         index = max(0, min(len(BLOCKS) - 1, index))
         result += BLOCKS[index]
+
+    if len(result) < width:
+        result = " " * (width - len(result)) + result
+        
     return result
 
 
@@ -53,7 +58,7 @@ def render(dev_temps):
                   box=box.ROUNDED)
     table.add_column("Dev_name", justify="right", no_wrap=True)
     table.add_column("Current_temp", justify="center")
-    table.add_column("Graph")
+    table.add_column("Graph", justify="center")
 
     for device, temp in dev_temps.items():
         dev_name = device.replace(" ", "_").replace("/dev/", "")
@@ -64,4 +69,5 @@ def render(dev_temps):
 
         graph = draw_graph(log_data)
         table.add_row(dev_name, str(temp), graph)
+        
     return table

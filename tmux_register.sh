@@ -7,17 +7,24 @@
 # sudo restorecon -v /usr/bin/tmux
 
 clear
-
-echo ""
+echo
 
 if [ "$EUID" -ne 0 ]; then
     echo "Run as root."
     exit 1
 fi
 
-LOGIN_USER=${SUDO_USER:-$LOGNAME}
-
 read -r -p "Enter the absolute path of the script to be executed: " FILE_PATH
+echo
+
+read -r -p "Does the command you want to run require root privileges? (y/n): " USER_CHECK
+echo
+
+if [ "$USER_CHECK" = "y" ]; then
+    LOGIN_USER="root"
+else
+    LOGIN_USER=${SUDO_USER:-$LOGNAME}
+fi
 
 # If the file the user wants to run does not exist, terminate the process.
 if [ ! -f "$FILE_PATH" ]; then
@@ -26,6 +33,7 @@ if [ ! -f "$FILE_PATH" ]; then
 fi
 
 read -r -p "Please enter the name of the program to run the file (example -> python3): " COMMAND_NAME
+echo
 
 TMUX_PATH=$(which tmux 2>/dev/null)
 
@@ -52,16 +60,19 @@ else
 fi
 
 read -r -p "Enter a tmux session name: " SESSION_NAME
+echo
 
 SYSTEMD_FILE_PATH="/etc/systemd/system/${SESSION_NAME}.service"
 
 cat << EOF > "$SYSTEMD_FILE_PATH"
 [Unit]
 Description=Auto Start Tmux Session on Boot
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
-Type=forking
+Type=oneshot
+RemainAfterExit=yes
 User=$LOGIN_USER
 ExecStart=$TMUX_PATH new-session -d -s "$SESSION_NAME" "$COMMAND_NAME $FILE_PATH"
 ExecStop=$TMUX_PATH kill-session -t "$SESSION_NAME"
@@ -80,7 +91,15 @@ if [ $? -eq 0 ]; then
     echo "Service registration is complete."
     exit 0
 else
-    echo "Service registration failed. The service file you created will be deleted."
-    rm -f "$SYSTEMD_FILE_PATH"
-    exit 1
+    echo "Service registration failed."
+    
+    read -r -p "Would you like to delete the .service file you created? (y/n): " SELECT
+
+    if [ "$SELECT" = "y" ]; then
+        echo "Delete the .service file."
+        rm -f "$SYSTEMD_FILE_PATH"
+        exit 1
+    else
+        exit 1
+    fi
 fi

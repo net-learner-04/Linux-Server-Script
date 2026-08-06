@@ -1,6 +1,6 @@
 #!/bin/bash
 
-clear
+clear; echo
 
 # Verify Root Permissions.
 if [ "$EUID" -ne 0 ]; then
@@ -8,13 +8,22 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+cat << "EOF"
+                                                         
+,------.   ,--.        ,--.   ,--.        ,--.           
+|  .--. ',-'  '-. ,---.|  |   |  | ,--,--.|  |,-. ,---.  
+|  '--'.''-.  .-'| .--'|  |.'.|  |' ,-.  ||     /| .-. : 
+|  |\  \   |  |  \ `--.|   ,'.   |\ '-'  ||  \  \\   --. 
+`--' '--'  `--'   `---''--'   '--' `--`--'`--'`--'`----' 
+
+EOF
+
 CURRENT_DATE=$(date +%Y-%m-%d)
 
-echo "Current date: $CURRENT_DATE"
-echo
+echo "Current date: $CURRENT_DATE"; echo
 
-read -r -p "When should the computer shut down? (type 'now' or an exact time later today, format HH:MM:SS): " OFF_TIME
-echo
+echo "When should the computer shut down?"
+read -r -p "Type 'now' or an exact time later today, format -> HH:MM:SS: " OFF_TIME; echo
 
 if [ "$OFF_TIME" != "now" ]; then
     # Check the shutdown time format matches HH:MM:SS
@@ -39,8 +48,8 @@ if [ "$OFF_TIME" != "now" ]; then
     fi
 fi
 
-read -r -p "Enter the date the computer should wake up (format: YYYY-MM-DD): " ON_DATE
-echo
+echo "Enter the date the computer should wake up."
+read -r -p "format -> YYYY-MM-DD: " ON_DATE; echo
 
 # Check the format matches YYYY-MM-DD
 if ! [[ "$ON_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
@@ -64,8 +73,8 @@ if [ "$ON_DATE_EPOCH" -lt "$TODAY_EPOCH" ]; then
     exit 1
 fi
 
-read -r -p "Enter the time the computer should wake up (format: HH:MM:SS, ex: 09:00:00): " ON_TIME
-echo
+echo "Enter the time the computer should wake up"
+read -r -p "format -> HH:MM:SS, (ex: 09:00:00): " ON_TIME; echo
 
 # Check the time format matches HH:MM:SS
 if ! [[ "$ON_TIME" =~ ^[0-9]{2}:[0-9]{2}:[0-9]{2}$ ]]; then
@@ -88,11 +97,20 @@ if [ "$WAKE_EPOCH" -lt "$NOW_EPOCH" ]; then
     exit 1
 fi
 
-echo "Shutdown and wake-up schedule set successfully."
-
 # The actual logic behind the execution of the rtcwake command.
 if [ "$OFF_TIME" = "now" ]; then
     rtcwake -m off --date "$ON_DATE $ON_TIME"
 else
-    echo "rtcwake -m off --date '$ON_DATE $ON_TIME'" | at "$OFF_TIME"
+    # Check if the atd service is running; if it's not, start it.
+    if ! systemctl is-active --quiet atd; then
+        echo "atd daemon is not running. Starting atd service."
+        
+        systemctl start atd
+        systemctl enable atd >/dev/null 2>&1
+    fi
+    
+    # The -M option prevents emails from being sent.
+    echo "rtcwake -m off --date '$ON_DATE $ON_TIME'" | at -M "$OFF_TIME"
 fi
+
+echo; echo "Shutdown and wake-up schedule set successfully."

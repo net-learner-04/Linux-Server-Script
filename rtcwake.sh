@@ -114,4 +114,4 @@ else
     echo "rtcwake -m off --date '$ON_DATE $ON_TIME'" | at -M "$OFF_TIME"
 fi
 
-echo; echo "Shutdown and wake-up schedule set successfully."
+echo "Shutdown and wake-up schedule set successfully."; echo

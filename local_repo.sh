@@ -1,6 +1,18 @@
 #!/bin/bash
 
-clear
+clear; echo
+
+cat << "EOF"
+                        ______                 
+                        | ___ \                
+ _   _ _   _ _ __ ___   | |_/ /___ _ __   ___  
+| | | | | | | '_ ` _ \  |    // _ \ '_ \ / _ \ 
+| |_| | |_| | | | | | | | |\ \  __/ |_) | (_) |
+ \__, |\__,_|_| |_| |_| \_| \_\___| .__/ \___/ 
+  __/ |                           | |          
+ |___/                            |_|          
+                                                                                                                                                                                                                               
+EOF
 
 # Verify Root Permissions.
 if [ "$EUID" -ne 0 ]; then
@@ -11,8 +23,10 @@ fi
 # Repository folder path
 REPO_DIR="/srv/repo"
 
+USER_NAME=$(logname)
+
 # Display a list of currently automatically mounted devices.
-ls /media/$USER/; echo
+ls /media/$USER_NAME/; echo
 
 # USB Mount Point (Requires changes in an auto-mount environment.)
 read -r -p "Enter the current USB mount point (absolute path): " USB_MOUNT; echo

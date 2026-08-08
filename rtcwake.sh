@@ -19,9 +19,10 @@ cat << "EOF"
                                                                                                                                          
 EOF
 
-CURRENT_DATE=$(date +"%Y-%m-%d %H:%M:%S")
+CURRENT_DATE=$(date +"%Y-%m-%d")
+CURRENT_TIME=$(date +"%H:%M:%S")
 
-echo "Current date: $CURRENT_DATE"; echo
+echo "Current date: $CURRENT_DATE $CURRENT_TIME"; echo
 
 echo "When should the computer shut down?"
 read -r -p "Type 'now' or an exact time later today, format -> HH:MM:SS: " OFF_TIME; echo
@@ -50,28 +51,22 @@ if [ "$OFF_TIME" != "now" ]; then
 fi
 
 echo "Enter the date the computer should wake up."
-read -r -p "format -> YYYY-MM-DD: " ON_DATE; echo
+read -r -p "Enter “today” or an exact date format. format -> YYYY-MM-DD : " ON_DATE; echo
 
-# Check the format matches YYYY-MM-DD
-if ! [[ "$ON_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-    echo "Invalid date format. Please use YYYY-MM-DD."
-    exit 1
-fi
-
-# Check that it's an actual, real calendar date.
-if ! date -d "$ON_DATE" >/dev/null 2>&1; then
-    echo "That date doesn't exist. Please check and try again."
-    exit 1
-fi
-
-# Check that it's not in the past.
-TODAY_EPOCH=$(date -d "$CURRENT_DATE" +%s)
-
-ON_DATE_EPOCH=$(date -d "$ON_DATE" +%s)
-
-if [ "$ON_DATE_EPOCH" -lt "$TODAY_EPOCH" ]; then
-    echo "The wake-up date can't be earlier than today ($CURRENT_DATE)."
-    exit 1
+if [ "$ON_DATE" = "today" ]; then
+    ON_DATE="$CURRENT_DATE"
+else
+    # Check the format matches YYYY-MM-DD
+    if ! [[ "$ON_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+        echo "Invalid date format. Please use YYYY-MM-DD."
+        exit 1
+    fi
+    
+    # Check that it's an actual, real calendar date.
+    if ! date -d "$ON_DATE" >/dev/null 2>&1; then
+        echo "That date doesn't exist. Please check and try again."
+        exit 1
+    fi
 fi
 
 echo "Enter the time the computer should wake up"
@@ -95,6 +90,12 @@ fi
 
 if [ "$WAKE_EPOCH" -lt "$NOW_EPOCH" ]; then
     echo "The wake-up time can't be in the past."
+    exit 1
+fi
+
+# Check that the wake-up time isn't earlier than the shutdown time
+if [ "$OFF_TIME" != "now" ] && [ "$WAKE_EPOCH" -lt "$OFF_EPOCH" ]; then
+    echo "The wake-up time must be after the shutdown time."
     exit 1
 fi
 

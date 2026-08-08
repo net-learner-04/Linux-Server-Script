@@ -51,7 +51,7 @@ if [ "$OFF_TIME" != "now" ]; then
 fi
 
 echo "Enter the date the computer should wake up."
-read -r -p "Enter “today” or an exact date format. format -> YYYY-MM-DD : " ON_DATE; echo
+read -r -p "Enter 'today' or an exact date format. format -> YYYY-MM-DD : " ON_DATE; echo
 
 if [ "$ON_DATE" = "today" ]; then
     ON_DATE="$CURRENT_DATE"

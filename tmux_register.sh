@@ -88,6 +88,9 @@ read -r -p "Enter a tmux session name: " SESSION_NAME; echo
 # Build the path for the new systemd unit file.
 SYSTEMD_FILE_PATH="/etc/systemd/system/${SESSION_NAME}.service"
 
+# A variable that dynamically stores the WorkingDirectory for each script.
+WORKING_DIR=$(dirname "$(realpath "$FILE_PATH")")
+
 # Generate the systemd service file that starts a tmux session running the command on boot.
 cat << EOF > "$SYSTEMD_FILE_PATH"
 [Unit]
@@ -99,6 +102,7 @@ Wants=network-online.target
 Type=oneshot
 RemainAfterExit=yes
 User=$LOGIN_USER
+WorkingDirectory=$WORKING_DIR
 ExecStart=$TMUX_PATH new-session -d -s "$SESSION_NAME" "$COMMAND_NAME $FILE_PATH"
 ExecStop=$TMUX_PATH kill-session -t "$SESSION_NAME"
 

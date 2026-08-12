@@ -5,6 +5,20 @@ import tomllib as tl
 import datetime as dt
 import pathlib as pl
 import threading as th
+import fcntl, shutil, hashlib
+
+
+# Resolve all paths relative to the script's own location, not the
+# current working directory. This makes the script safe to run from
+# cron, systemd timers, or any other directory.
+BASE_DIR = pl.Path(__file__).resolve().parent
+CONF_PATH = BASE_DIR / "conf.toml"
+LOG_PATH = BASE_DIR / "backup.log"
+LOCK_PATH = BASE_DIR / "backup.lock"
+
+# Kept open for the lifetime of the process so the OS-level lock
+# (fcntl.flock) is held until the script exits or releases it explicitly.
+_lock_file_handle = None
 
 
 logging.basicConfig(
@@ -12,8 +26,8 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] (%(filename)s:%(lineno)d) - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[
-        logging.FileHandler("backup.log", encoding="utf-8"),
-        logging.StreamHandler(sys.stdout)                 
+        logging.FileHandler(LOG_PATH, encoding="utf-8"),
+        logging.StreamHandler(sys.stdout)
     ]
 )
 
@@ -29,12 +43,45 @@ def root_check():
         sys.exit(os.EX_NOPERM)
 
 
+def acquire_lock():
+    '''Prevents concurrent runs of the script by taking an exclusive,
+    non-blocking lock on a dedicated lock file. If another instance is
+    already running, this instance exits immediately instead of writing
+    to the same destination in parallel.'''
+    global _lock_file_handle
+    _lock_file_handle = open(LOCK_PATH, "w")
+    try:
+        fcntl.flock(_lock_file_handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        logging.critical("Another instance of the backup script is already running. Exiting.")
+        syslog.syslog(syslog.LOG_ERR, "Backup already in progress. Exiting.")
+        sys.exit(os.EX_TEMPFAIL)
+    _lock_file_handle.write(str(os.getpid()))
+    _lock_file_handle.flush()
+    logging.info(f"Lock acquired ({LOCK_PATH}).")
+
+
+def release_lock():
+    '''Releases the lock file so subsequent runs are not blocked.'''
+    global _lock_file_handle
+    if _lock_file_handle is not None:
+        try:
+            fcntl.flock(_lock_file_handle, fcntl.LOCK_UN)
+            _lock_file_handle.close()
+        except OSError as e:
+            logging.warning(f"Failed to release lock cleanly: {e}")
+        try:
+            LOCK_PATH.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
 def read_toml():
     '''Reads and parses the conf.toml file to load backup targets
       and destination, then triggers a disk space validation check.'''
     logging.info("Reading configuration file (conf.toml)...")
     try:
-        with open("conf.toml", "rb") as toml:
+        with open(CONF_PATH, "rb") as toml:
             config = tl.load(toml)
     except FileNotFoundError:
         logging.critical("Configuration file 'conf.toml' not found.")
@@ -53,6 +100,10 @@ def read_toml():
         syslog.syslog(syslog.LOG_ERR, f"Missing required key in conf.toml: {e}")
         sys.exit(os.EX_CONFIG)
 
+    # Optional: number of days of backups to keep. If absent, no old
+    # backups are ever deleted (same behavior as before).
+    retention_days = config.get("destination", {}).get("retention_days")
+
     if len(src_paths) < 1:
         logging.error("No backup source directories specified in the configuration file.")
         syslog.syslog(syslog.LOG_ERR, "No backup source directories specified in the configuration file.")
@@ -70,7 +121,7 @@ def read_toml():
     if not space_check(dst_path, part_space):
         sys.exit(os.EX_CANTCREAT)
 
-    return (src_paths, dst_path, part_space)
+    return (src_paths, dst_path, part_space, retention_days)
 
 
 def get_partition_space(src_list):
@@ -109,6 +160,18 @@ def space_check(dst_path, part_space):
     return True
 
 
+def get_compressor():
+    '''Prefers pigz (parallel gzip) over gzip when available, since pigz
+    uses all CPU cores and can drastically cut compression time for large
+    backups. Falls back to plain gzip if pigz is not installed.'''
+    pigz_path = shutil.which("pigz")
+    if pigz_path:
+        logging.info("Using pigz for parallel compression.")
+        return ["pigz"]
+    logging.info("pigz not found, falling back to single-threaded gzip.")
+    return ["gzip"]
+
+
 def feed_gzip(p1, p2, pbar):
     '''Reads the output of tar (p1) in chunks,
       passes it to the standard input of gzip (p2), and updates the progress'''
@@ -124,7 +187,67 @@ def feed_gzip(p1, p2, pbar):
         p1.stdout.close()
 
 
-def backup_process(src_list, dst_path, part_space):
+def drain_stderr(proc, name):
+    '''Continuously drains a subprocess's stderr in the background.
+    Without this, a chatty process (e.g. tar warning that a file changed
+    while being read) can fill the OS pipe buffer and deadlock the whole
+    pipeline once the buffer is full and nobody is reading it.'''
+    try:
+        for raw_line in iter(proc.stderr.readline, b""):
+            line = raw_line.decode(errors="replace").rstrip()
+            if line:
+                logging.debug(f"[{name}] {line}")
+    finally:
+        proc.stderr.close()
+
+
+def verify_backup(full_path):
+    '''Verifies the integrity of the produced archive by listing its
+    contents (tar -tzf) and computing a SHA-256 checksum alongside it.
+    A backup that cannot even be listed is not a usable backup.'''
+    logging.info(f"Verifying archive integrity: {full_path}")
+    result = sub.run(["tar", "-tzf", str(full_path)], stdout=sub.DEVNULL, stderr=sub.PIPE)
+    if result.returncode != 0:
+        err = result.stderr.decode(errors="replace").strip()
+        logging.error(f"Integrity check failed for {full_path}: {err}")
+        syslog.syslog(syslog.LOG_ERR, f"Integrity check failed for {full_path}: {err}")
+        return False
+
+    sha256 = hashlib.sha256()
+    with open(full_path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            sha256.update(chunk)
+    checksum_path = pl.Path(str(full_path) + ".sha256")
+    checksum_path.write_text(f"{sha256.hexdigest()}  {full_path.name}\n")
+
+    logging.info(f"Integrity check passed. SHA-256: {sha256.hexdigest()}")
+    return True
+
+
+def cleanup_old_backups(backup_dir, retention_days):
+    '''Deletes backup archives (and their checksum files) older than
+    retention_days. Does nothing if retention_days is not configured, to
+    preserve the previous behavior for anyone who hasn't opted in.'''
+    if retention_days is None:
+        return
+
+    cutoff = dt.datetime.now() - dt.timedelta(days=retention_days)
+    removed = 0
+    for entry in pl.Path(backup_dir).glob("backup_*.tar.gz*"):
+        try:
+            mtime = dt.datetime.fromtimestamp(entry.stat().st_mtime)
+            if mtime < cutoff:
+                entry.unlink()
+                removed += 1
+                logging.info(f"Removed old backup file: {entry}")
+        except OSError as e:
+            logging.warning(f"Failed to remove old backup {entry}: {e}")
+
+    if removed:
+        logging.info(f"Retention cleanup complete. Removed {removed} file(s) older than {retention_days} day(s).")
+
+
+def backup_process(src_list, dst_path, part_space, retention_days):
     '''Executes a multi-process backup pipeline by streaming tar data 
     into gzip compression, while writing the output directly to the destination
       and tracking progress with a real-time progress bar.'''
@@ -135,15 +258,26 @@ def backup_process(src_list, dst_path, part_space):
     backup_dir.mkdir(parents=True, exist_ok=True)
     full_path = backup_dir / backup_file_name
 
-    command = ["tar", "-c", "-f", "-"] + src_list
+    # Never let the destination directory be swallowed into its own backup.
+    command = ["tar", "-c", "-f", "-", f"--exclude={backup_dir}"] + src_list
+    compressor_cmd = get_compressor()
 
+    p1 = None
+    p2 = None
     logging.info(f"Starting backup pipeline for targets: {src_list}")
     try:
         p1 = sub.Popen(command, stdout=sub.PIPE, stderr=sub.PIPE)
         logging.info(f"Tar process started. PID: {p1.pid}")
 
-        p2 = sub.Popen(["gzip"], stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
-        logging.info(f"Gzip process started. PID: {p2.pid}")
+        p2 = sub.Popen(compressor_cmd, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
+        logging.info(f"{compressor_cmd[0]} process started. PID: {p2.pid}")
+
+        # Drain both stderr streams in the background so a verbose tar/gzip
+        # process can never fill the pipe buffer and deadlock the pipeline.
+        p1_stderr_thread = th.Thread(target=drain_stderr, args=(p1, "tar"))
+        p2_stderr_thread = th.Thread(target=drain_stderr, args=(p2, compressor_cmd[0]))
+        p1_stderr_thread.start()
+        p2_stderr_thread.start()
 
         with open(full_path, "wb") as out, \
              tqdm.tqdm(total=part_space, unit="B", unit_scale=True, desc="Backing up") as pbar:
@@ -161,29 +295,58 @@ def backup_process(src_list, dst_path, part_space):
 
         p1.wait()
         p2.wait()
+        p1_stderr_thread.join()
+        p2_stderr_thread.join()
 
-        if p1.returncode != 0 or p2.returncode != 0:
-            tar_err = p1.stderr.read().decode().strip() if p1.stderr else ""
-            gzip_err = p2.stderr.read().decode().strip() if p2.stderr else ""
-            error_msg = f"Backup failed! tar_rc={p1.returncode} ({tar_err}), gzip_rc={p2.returncode} ({gzip_err})"
+        # tar exits with 1 for non-fatal warnings (e.g. "file changed as we
+        # read it"), which is common and expected when backing up a live
+        # system. Only treat 2+ as an actual failure.
+        tar_failed = p1.returncode not in (0, 1)
+        gzip_failed = p2.returncode != 0
+
+        if tar_failed or gzip_failed:
+            error_msg = f"Backup failed! tar_rc={p1.returncode}, {compressor_cmd[0]}_rc={p2.returncode}"
             logging.error(error_msg)
             syslog.syslog(syslog.LOG_ERR, error_msg)
             sys.exit(os.EX_SOFTWARE)
-        else:
-            success_msg = f"Backup successfully completed: {full_path}"
-            logging.info(success_msg)
-            syslog.syslog(syslog.LOG_INFO, success_msg)
+
+        if p1.returncode == 1:
+            logging.warning("tar reported non-fatal warnings (e.g. files changed during read). Continuing.")
+
+        if not verify_backup(full_path):
+            sys.exit(os.EX_SOFTWARE)
+
+        success_msg = f"Backup successfully completed and verified: {full_path}"
+        logging.info(success_msg)
+        syslog.syslog(syslog.LOG_INFO, success_msg)
+
+        cleanup_old_backups(backup_dir, retention_days)
 
     except Exception as e:
         logging.exception(f"Exception occurred during compression: {e}")
         syslog.syslog(syslog.LOG_ERR, f"Failed to run backup pipeline: {e}")
         sys.exit(os.EX_SOFTWARE)
+    finally:
+        # Make sure no orphaned tar/gzip processes are left behind if we
+        # exited early due to an exception.
+        for proc, name in ((p1, "tar"), (p2, compressor_cmd[0] if p2 else "compressor")):
+            if proc is not None and proc.poll() is None:
+                logging.warning(f"Terminating leftover {name} process (PID: {proc.pid}).")
+                proc.terminate()
+                try:
+                    proc.wait(timeout=5)
+                except sub.TimeoutExpired:
+                    proc.kill()
 
 
 def start():
     root_check()
-    src_paths, dst_path, part_space = read_toml()
-    backup_process(src_paths, dst_path, part_space)
+    acquire_lock()
+    try:
+        src_paths, dst_path, part_space, retention_days = read_toml()
+        backup_process(src_paths, dst_path, part_space, retention_days)
+    finally:
+        release_lock()
 
 
 if __name__ == "__main__":
@@ -191,4 +354,3 @@ if __name__ == "__main__":
     logging.info("Backup script finished safely.")
     print("Script completed successfully.")
     syslog.closelog()
-

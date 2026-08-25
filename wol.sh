@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # MAC Address of the Target Desktop.
-TARGET_MAC="AA:BB:CC:DD:EE:FF"
+TARGET_MAC=""
 
 # The IP address of the target desktop or the broadcast IP address.
 BROADCAST_IP="255.255.255.255"

@@ -12,6 +12,8 @@ fi
 PAM_SSHD="/etc/pam.d/sshd"
 NOTIFY_SCRIPT="/usr/local/bin/ssh_notify.sh"
 PAM_LINE="session optional pam_exec.so $NOTIFY_SCRIPT"
+WEBHOOK_DIR="/etc/ssh_notify"
+WEBHOOK_PATH="$WEBHOOK_DIR/discord_webhook.conf"
 
 # Check whether the $NOTIFY_SCRIPT file exists.
 if [ ! -f "$NOTIFY_SCRIPT" ]

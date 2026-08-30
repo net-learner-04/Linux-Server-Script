@@ -20,6 +20,27 @@ then
     exit 1
 fi
 
+# Prompt for the Discord webhook URL and validate its format before saving.
+read -r -p "Enter your Discord webhook URL: " DISCORD_WEBHOOK_INPUT
+
+if [[ "$DISCORD_WEBHOOK_INPUT" != https://discord.com/api/webhooks/* ]]
+then
+    echo "That doesn't look like a valid Discord webhook URL. Aborting."
+    exit 1
+fi
+
+mkdir -p "$WEBHOOK_DIR"
+
+cat << EOF > "$WEBHOOK_PATH"
+DISCORD_WEBHOOK="$DISCORD_WEBHOOK_INPUT"
+EOF
+
+chmod 600 "$WEBHOOK_PATH"
+
+chown root:root "$WEBHOOK_PATH"
+
+echo "Webhook config written to $WEBHOOK_PATH"
+
 # If there is an existing PAM line pointing to this script,
 # remove it and register the new one.
 if grep -qF "pam_exec.so" "$PAM_SSHD" && grep -qF "$NOTIFY_SCRIPT" "$PAM_SSHD"

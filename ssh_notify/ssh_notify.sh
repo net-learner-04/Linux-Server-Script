@@ -47,6 +47,9 @@ then
     >> "$LOG_PATH"
 fi
 
+# Always record that pam_exec actually invoked this script.
+echo "$TIMESTAMP [DEBUG] invoked service=$PAM_SERVICE type=$PAM_TYPE user=$PAM_USER rhost=$PAM_RHOST" >> "$LOG_PATH"
+
 # Load Discord webhook URL from external config file
 source "$WEBHOOK_PATH"
 
